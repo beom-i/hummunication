@@ -30,6 +30,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 지켜야 할 것
 - 의존성 추가 시 이유를 밝히고, 같은 역할의 라이브러리를 중복 설치하지 않는다.
+- **폼**: react-hook-form + zod(`zodResolver`) + shadcn `Field` 컴포넌트(`Controller`로 연결). `useState`로 폼 상태를 직접 관리하지 않는다. 서버 오류는 `form.setError("root", …)`. 예시: `src/components/auth/login-form.tsx`
+- **검증**: 서버(Server Action·Route Handler)로 들어오는 입력도 zod로 다시 검증한다. 클라이언트 검증만 믿지 않는다.
 - 스타일은 토큰(`bg-primary` 등)과 `src/components/ui/*`의 variant로 처리. 페이지에 색상 하드코딩 금지.
 - `src/components/ui/*`는 shadcn이 생성한 우리 코드다. 수정은 디자인 시스템 차원의 변경일 때만.
 - 서버에서 사용자 확인은 `supabase.auth.getClaims()`로 한다. 클라이언트가 보낸 user id를 신뢰하지 않는다.

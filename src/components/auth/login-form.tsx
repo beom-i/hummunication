@@ -10,35 +10,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+
+const schema = z.object({
+  email: z.email("올바른 이메일을 입력하세요"),
+  password: z.string().min(1, "비밀번호를 입력하세요"),
+});
 
 // Accounts are issued by an admin — there is intentionally no sign-up link.
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
+  });
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const { error } = await createClient().auth.signInWithPassword({
-      email,
-      password,
-    });
+  const onSubmit = async (values: z.infer<typeof schema>) => {
+    const { error } = await createClient().auth.signInWithPassword(values);
     if (error) {
-      setError(error.message);
-      setIsLoading(false);
+      form.setError("root", { message: error.message });
       return;
     }
     router.push("/protected");
@@ -52,44 +51,58 @@ export function LoginForm({
           <CardDescription>발급받은 이메일과 비밀번호를 입력하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">이메일</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="name@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">비밀번호</Label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    비밀번호를 잊으셨나요?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "로그인 중..." : "로그인"}
+          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+            <FieldGroup>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="email">이메일</FieldLabel>
+                    <Input
+                      {...field}
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="name@example.com"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <div className="flex items-center">
+                      <FieldLabel htmlFor="password">비밀번호</FieldLabel>
+                      <Link
+                        href="/auth/forgot-password"
+                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                      >
+                        비밀번호를 잊으셨나요?
+                      </Link>
+                    </div>
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              {form.formState.errors.root && (
+                <FieldError>{form.formState.errors.root.message}</FieldError>
+              )}
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "로그인 중..." : "로그인"}
               </Button>
-            </div>
+            </FieldGroup>
           </form>
         </CardContent>
       </Card>

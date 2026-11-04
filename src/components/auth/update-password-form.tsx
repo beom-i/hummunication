@@ -10,30 +10,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+
+// Keep in sync with supabase/config.toml `minimum_password_length` and the dashboard setting.
+const schema = z.object({
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다"),
+});
 
 // Used after a password-reset or admin-invite email link (session already active).
 export function UpdatePasswordForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { password: "" },
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
+  const onSubmit = async ({ password }: z.infer<typeof schema>) => {
     const { error } = await createClient().auth.updateUser({ password });
     if (error) {
-      setError(error.message);
-      setIsLoading(false);
+      form.setError("root", { message: error.message });
       return;
     }
     router.push("/protected");
@@ -47,25 +50,32 @@ export function UpdatePasswordForm({
           <CardDescription>새로 사용할 비밀번호를 입력하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="password">새 비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "저장 중..." : "비밀번호 저장"}
+          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+            <FieldGroup>
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="password">새 비밀번호</FieldLabel>
+                    <Input
+                      {...field}
+                      id="password"
+                      type="password"
+                      autoComplete="new-password"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              {form.formState.errors.root && (
+                <FieldError>{form.formState.errors.root.message}</FieldError>
+              )}
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "저장 중..." : "비밀번호 저장"}
               </Button>
-            </div>
+            </FieldGroup>
           </form>
         </CardContent>
       </Card>
