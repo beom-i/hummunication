@@ -10,62 +10,84 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import {
+  type UpdatePasswordFormData,
+  updatePasswordDefaultValues,
+  updatePasswordSchema,
+} from "./schemas";
 
 // Used after a password-reset or admin-invite email link (session already active).
 export function UpdatePasswordForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isValid, isDirty, isSubmitting },
+  } = useForm<UpdatePasswordFormData>({
+    resolver: zodResolver(updatePasswordSchema),
+    mode: "all",
+    defaultValues: updatePasswordDefaultValues,
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    const { error } = await createClient().auth.updateUser({ password });
+  const onSubmit = handleSubmit(async ({ newPassword }) => {
+    const { error } = await createClient().auth.updateUser({ password: newPassword });
     if (error) {
-      setError(error.message);
-      setIsLoading(false);
+      setError("root", { message: error.message });
       return;
     }
     router.push("/protected");
-  };
+  });
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">새 비밀번호 설정</CardTitle>
-          <CardDescription>새로 사용할 비밀번호를 입력하세요</CardDescription>
+          <CardTitle className="text-2xl">비밀번호 재설정</CardTitle>
+          <CardDescription>새로 사용할 비밀번호를 입력해 주세요.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="password">새 비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
+          <form onSubmit={onSubmit} noValidate>
+            <FieldGroup>
+              <Field data-invalid={!!errors.newPassword}>
+                <FieldLabel htmlFor="newPassword">새 비밀번호</FieldLabel>
+                <PasswordInput
+                  {...register("newPassword", { deps: ["confirmPassword"] })}
+                  id="newPassword"
                   autoComplete="new-password"
-                  minLength={8}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="새 비밀번호를 입력해 주세요"
+                  aria-invalid={!!errors.newPassword}
                 />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "저장 중..." : "비밀번호 저장"}
+                <FieldError errors={[errors.newPassword]} />
+              </Field>
+              <Field data-invalid={!!errors.confirmPassword}>
+                <FieldLabel htmlFor="confirmPassword">새 비밀번호 확인</FieldLabel>
+                <PasswordInput
+                  {...register("confirmPassword")}
+                  id="confirmPassword"
+                  autoComplete="new-password"
+                  placeholder="새 비밀번호를 한 번 더 입력해 주세요"
+                  aria-invalid={!!errors.confirmPassword}
+                />
+                <FieldError errors={[errors.confirmPassword]} />
+              </Field>
+              <FieldError>{errors.root?.message}</FieldError>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!isDirty || !isValid || isSubmitting}
+              >
+                {isSubmitting ? "저장 중..." : "재설정하기"}
               </Button>
-            </div>
+            </FieldGroup>
           </form>
         </CardContent>
       </Card>
