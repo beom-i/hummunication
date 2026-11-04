@@ -12,16 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
-import * as z from "zod";
-
-const schema = z.object({
-  email: z.email("올바른 이메일을 입력하세요"),
-  password: z.string().min(1, "비밀번호를 입력하세요"),
-});
+import { useForm } from "react-hook-form";
+import { type LoginFormData, loginDefaultValues, loginSchema } from "./schemas";
 
 // Accounts are issued by an admin — there is intentionally no sign-up link.
 export function LoginForm({
@@ -29,79 +25,68 @@ export function LoginForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const router = useRouter();
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: loginDefaultValues,
   });
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const onSubmit = handleSubmit(async (values) => {
     const { error } = await createClient().auth.signInWithPassword(values);
     if (error) {
-      form.setError("root", { message: error.message });
+      setError("root", { message: "이메일 또는 비밀번호가 올바르지 않아요." });
       return;
     }
     router.push("/protected");
-  };
+  });
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">로그인</CardTitle>
-          <CardDescription>발급받은 이메일과 비밀번호를 입력하세요</CardDescription>
+          <CardDescription>발급받은 계정으로 로그인해 주세요.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+          <form onSubmit={onSubmit} noValidate>
             <FieldGroup>
-              <Controller
-                name="email"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="email">이메일</FieldLabel>
-                    <Input
-                      {...field}
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="name@example.com"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="password"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <div className="flex items-center">
-                      <FieldLabel htmlFor="password">비밀번호</FieldLabel>
-                      <Link
-                        href="/auth/forgot-password"
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                      >
-                        비밀번호를 잊으셨나요?
-                      </Link>
-                    </div>
-                    <Input
-                      {...field}
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              {form.formState.errors.root && (
-                <FieldError>{form.formState.errors.root.message}</FieldError>
-              )}
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "로그인 중..." : "로그인"}
+              <Field data-invalid={!!errors.email}>
+                <FieldLabel htmlFor="email">이메일</FieldLabel>
+                <Input
+                  {...register("email")}
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@company.com"
+                  aria-invalid={!!errors.email}
+                />
+                <FieldError errors={[errors.email]} />
+              </Field>
+              <Field data-invalid={!!errors.password}>
+                <FieldLabel htmlFor="password">비밀번호</FieldLabel>
+                <PasswordInput
+                  {...register("password")}
+                  id="password"
+                  autoComplete="current-password"
+                  placeholder="비밀번호를 입력해 주세요"
+                  aria-invalid={!!errors.password}
+                />
+                <FieldError errors={[errors.password]} />
+              </Field>
+              <FieldError>{errors.root?.message}</FieldError>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "로그인 중..." : "로그인"}
               </Button>
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
             </FieldGroup>
           </form>
         </CardContent>
