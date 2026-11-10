@@ -12,6 +12,7 @@ await page.cdp("Network.enable");
 await page.cdp("Network.setCacheDisabled", {cacheDisabled:true});
 try {
   await page.reload({timeout:30000});
+  await page.waitForSelector('.entry-splash', {state:"hidden", timeout:10000});
   await page.waitForSelector('button[aria-label="사이드바 접기"]');
   await page.waitForFunction(() => [...document.querySelectorAll('[data-slot="sidebar-container"] img')].filter(i=>i.getBoundingClientRect().width>0).every(i=>i.complete&&i.naturalWidth>0));
   await page.waitForLoadState("networkidle", {timeout:30000, idleMs:500});

@@ -21,12 +21,13 @@ function NavigationIcon({ name }: { name: "home" | "card-news" | "team" }) {
   );
 }
 
-export function AppSidebar({ onHome, onCreate, onTeam }: {
+export function AppSidebar({ active = "home", onHome, onCreate, onTeam }: {
+  active?: "home" | "weekly";
   onHome: () => void;
   onCreate: () => void;
   onTeam: () => void;
 }) {
-  const { state, toggleSidebar, setOpenMobile, isMobile } = useSidebar();
+  const { state, toggleSidebar, setOpen, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const navigate = (action: () => void) => {
     action();
@@ -57,13 +58,13 @@ export function AppSidebar({ onHome, onCreate, onTeam }: {
           <SidebarGroupLabel className="whitespace-nowrap group-data-[collapsible=icon]:mt-0">워크스페이스</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive onClick={() => navigate(onHome)} tooltip="홈" aria-label="홈"
+              <SidebarMenuButton isActive={active === "home"} onClick={() => { navigate(onHome); setOpen(true); }} tooltip="홈" aria-label="홈"
                 className="rounded-lg font-bold group-data-[collapsible=icon]:w-[29px]!">
                 <NavigationIcon name="home" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">홈</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => navigate(onCreate)} tooltip="카드뉴스 만들기" aria-label="카드뉴스 만들기"
+              <SidebarMenuButton isActive={active === "weekly"} onClick={() => { navigate(onCreate); setOpen(false); }} tooltip="카드뉴스 만들기" aria-label="카드뉴스 만들기"
                 className="rounded-lg font-bold group-data-[collapsible=icon]:w-[29px]!">
                 <NavigationIcon name="card-news" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">카드뉴스 만들기</span>
               </SidebarMenuButton>

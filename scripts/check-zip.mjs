@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import { storedZip } from "../src/lib/stored-zip.ts";
+
+const data = new TextEncoder().encode("123456789");
+const zip = storedZip([{ name: "목업.png", data }, { name: "empty.jpg", data: new Uint8Array() }]);
+const view = new DataView(zip.buffer);
+const name = new TextEncoder().encode("목업.png");
+assert.equal(view.getUint32(0, true), 0x04034b50);
+assert.equal(view.getUint32(14, true), 0xcbf43926);
+assert.equal(view.getUint32(18, true), 9);
+assert.deepEqual(zip.slice(30, 30 + name.length), name);
+assert.deepEqual(zip.slice(30 + name.length, 39 + name.length), data);
+const end = zip.length - 22;
+assert.equal(view.getUint32(end, true), 0x06054b50);
+assert.equal(view.getUint16(end + 8, true), 2);
+const directory = view.getUint32(end + 16, true);
+assert.equal(view.getUint32(directory, true), 0x02014b50);
+assert.equal(view.getUint32(directory + 16, true), 0xcbf43926);
+assert.equal(view.getUint32(directory + 42, true), 0);
+assert.equal(directory + view.getUint32(end + 12, true), end);
+assert.equal(storedZip([]).length, 22);
+console.log("PASS: ZIP checksum, UTF-8 names, directory offsets, empty files/archive");
