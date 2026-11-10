@@ -1,0 +1,22 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="398.425" height="278.05" viewBox="0 0 398.425 278.05" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Browser window">
+<g clip-path="url(#clip0_0_11)">
+<rect width="398.425" height="278.05" rx="14.1588" fill="#1C1C1B" fill-opacity="0.6"/>
+<g id="Window controls" clip-path="url(#clip1_0_11)">
+<circle id="Window control" cx="19.3075" cy="18.0203" r="5.14865" fill="#363635"/>
+<circle id="Window control_2" cx="36.0405" cy="18.0203" r="5.14865" fill="#363635"/>
+<circle id="Window control_3" cx="52.7739" cy="18.0203" r="5.14865" fill="#363635"/>
+</g>
+<path id="Toolbar divider" d="M0.000104726 37.3277L412.483 37.3277V38.6149L0.000104726 38.6149L0.000104726 37.3277Z" fill="#30302F"/>
+</g>
+<rect x="0.643581" y="0.643581" width="397.138" height="276.763" rx="13.5152" stroke="#30302F" stroke-width="1.28716"/>
+</g>
+<defs>
+<clipPath id="clip0_0_11">
+<rect width="398.425" height="278.05" rx="14.1588" fill="white"/>
+</clipPath>
+<clipPath id="clip1_0_11">
+<rect width="43.7635" height="10.2973" fill="white" transform="translate(14.1588 12.8716)"/>
+</clipPath>
+</defs>
+</svg>
