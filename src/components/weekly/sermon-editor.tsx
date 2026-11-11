@@ -53,7 +53,6 @@ export function SermonEditor({ preview }: { preview: boolean }) {
           else clearErrors("sermon.document");
         }} onBlur={field.onBlur} invalid={!!errors.sermon?.document} />} />
         <FieldError errors={[errors.sermon?.document]} />
-        <p className="text-xs leading-relaxed text-muted-foreground">Enter로 줄바꿈해 주세요. 빈 줄도 카드에 반영되고, 내용이 넘치면 다음 장이 추가돼요.</p>
       </Field> : <SermonFields />}
     </div>
     <section className="min-w-0 flex-1 rounded-3xl bg-card p-6 max-lg:w-full" aria-label={preview ? "설교 본문 카드뉴스 미리보기" : "설교 표지 미리보기"} aria-busy={preview && !ready}>
