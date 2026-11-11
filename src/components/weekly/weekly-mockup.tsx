@@ -114,6 +114,12 @@ export function WeeklyMockup() {
   const finishContent = () => navigate(3);
   const afterSermon = () => getValues("sections").includes("family") ? navigate(2, "families") : finishContent();
   const next = async () => {
+    if (step === 1) {
+      if (!await trigger("date")) return;
+      if (!editingId) methods.setValue("sermon.date", getValues("date"));
+      navigate(2);
+      return;
+    }
     const sections = getValues("sections");
     if (view === "options") {
       if (!await trigger("sections")) return;
@@ -129,7 +135,8 @@ export function WeeklyMockup() {
     } else finishContent();
   };
   const back = () => {
-    if (step === 3) navigate(2);
+    if (step === 1) router.push(editingId ? bulletinHref(editingId) : "/home");
+    else if (step === 3) navigate(2);
     else if (view === "options") navigate(1);
     else if (view === "sermon") navigate(2);
     else if (view === "sermon-preview") navigate(2, "sermon");
@@ -148,17 +155,17 @@ export function WeeklyMockup() {
   return (
     <FormProvider {...methods}>
       <SermonPagesProvider>
-      <main ref={main} className={`weekly-main min-w-0 flex-1 ${step > 1 ? "pb-[100px]" : ""}`} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
-      {step === 1 ? <PublishDate onNext={() => { if (!editingId) methods.setValue("sermon.date", getValues("date")); navigate(2); }} onSave={() => save()} saving={pending} lockedDate={editingId ?? undefined} /> : (
+      <main ref={main} className="weekly-main min-w-0 flex-1 pb-[100px]" style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
+      {step === 1 ? <PublishDate lockedDate={editingId ?? undefined} /> : (
         <>
           <WeeklyHeading step={step} title={title} description={step === 2 && (view === "options" || view === "family-preview") ? "해당되지 않는 것은 제외해 주세요" : undefined} />
           <div key={`${step}-${view}-${groupIndex}`} className="weekly-content weekly-page-enter">
             {step === 3 ? <WeeklyResults /> : view === "options" ? <Configuration /> : view === "sermon" || view === "sermon-preview" ? <SermonEditor preview={view === "sermon-preview"} /> : view === "families" ? <FamilyList onEdit={(index) => navigate(2, "family-edit", index)} /> : view === "family-edit" ? <FamilyEditor index={groupIndex} /> : <FamilyPreview onEdit={(index) => navigate(2, "family-edit", index)} />}
           </div>
           <div className="mx-auto max-w-[480px] px-4"><FieldError errors={[errors.root]} /></div>
-          <WeeklyFooter onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={step === 3 ? "저장" : "다음"} />
         </>
       )}
+      <WeeklyFooter onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={step === 3 ? "저장" : "다음"} />
       </main>
       </SermonPagesProvider>
     </FormProvider>
