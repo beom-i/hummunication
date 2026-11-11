@@ -22,6 +22,14 @@ pnpm dev
 | `pnpm typecheck` | 라우트 타입 생성 + `tsc --noEmit` |
 | `pnpm supabase <cmd>` | Supabase CLI (프로젝트 고정 버전) |
 
+## 배포
+
+변경을 작업 브랜치에 커밋한 후 `bash scripts/deploy.sh`를 실행한다. GitHub CLI(`gh auth login`)와 pnpm이 필요하다.
+
+로컬 검사 → 브랜치 push → PR 생성 또는 재사용 → ci·gitleaks 및 PR 검사 통과 → main 병합 → Vercel 배포 성공 확인 순서로 실행한다. 검사 실패 시 병합하지 않으며 DB 마이그레이션이 포함된 변경은 별도 운영 반영 확인을 위해 중단한다. 이미 병합된 같은 커밋은 배포 확인부터 이어간다.
+
+스크립트 제어 흐름은 `python3 scripts/check-deploy.py`로 실제 원격 작업 없이 검증할 수 있다.
+
 ## 인증
 
 공개 회원가입 없음. 계정은 admin이 Supabase 대시보드(Authentication → Users)에서 발급한다.
