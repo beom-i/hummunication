@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { WorkIntro } from "@/components/home/work-intro";
 import { PublishDate } from "./publish-date";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
+import { bulletinHref } from "@/components/bulletins/format";
+import { allowBulletinEdit, canEditBulletin, endBulletinEdit, findBulletin, legacyDraftKey, saveBulletin } from "@/components/bulletins/local-store";
 import { FieldError } from "@/components/ui/field";
 import { WeeklyHeading, WeeklyFooter } from "./weekly-layout";
 import { Configuration } from "./configuration";
@@ -17,48 +20,97 @@ import { WeeklyResults } from "./weekly-results";
 import { weeklyDefaultValues, weeklyDraftSchema, weeklySchema, type WeeklyFormData } from "./schemas";
 import { SermonPagesProvider } from "./sermon-pagination";
 
-export const weeklyDraftKey = "hummunication.weekly-draft";
 const views = ["options", "sermon", "sermon-preview", "families", "family-edit", "family-preview"] as const;
 export type WeeklyView = typeof views[number];
 
 export function WeeklyMockup() {
   const search = useSearchParams();
   const router = useRouter();
-  const { setOpen, state, isMobile } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const main = useRef<HTMLElement>(null);
   const [pending, startTransition] = useTransition();
+  const editingId = search.get("bulletin");
+  const [readyFor, setReadyFor] = useState<string | null | undefined>(undefined);
+  const loadedLegacy = useRef(false);
+  const activeEdit = useRef<string | null>(null);
   const rawStep = search.get("step");
   const step = rawStep === "3" ? 3 : rawStep === "2" || rawStep === "2-1" ? 2 : 1;
   const rawView = rawStep === "2-1" ? "sermon" : search.get("view");
   const view: WeeklyView = views.find((value) => value === rawView) ?? "options";
   const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: weeklyDefaultValues });
-  const { reset, setError, getValues, trigger, formState: { errors } } = methods;
+  const { reset, setError, clearErrors, getValues, trigger, formState: { errors } } = methods;
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(weeklyDraftKey);
-      if (!saved) return;
-      const result = weeklyDraftSchema.safeParse(JSON.parse(saved));
-      if (result.success) reset(result.data);
-    } catch { setError("root", { message: "브라우저 저장 공간을 확인해 주세요" }); }
-  }, [reset, setError]);
+    activeEdit.current = editingId;
+    const frame = requestAnimationFrame(() => {
+      try {
+        if (editingId) {
+          if (!canEditBulletin(editingId)) { router.replace(bulletinHref(editingId)); return; }
+          const record = findBulletin(editingId);
+          if (!record) { router.replace(bulletinHref(editingId)); return; }
+          reset(record.data);
+        } else {
+          reset(weeklyDefaultValues);
+          const saved = localStorage.getItem(legacyDraftKey);
+          loadedLegacy.current = false;
+          if (saved) {
+            const result = weeklyDraftSchema.safeParse(JSON.parse(saved));
+            if (result.success) { reset(result.data); loadedLegacy.current = true; }
+            else setError("root", { message: "이전에 저장한 내용을 불러오지 못했어요. 원본은 브라우저에 남아 있어요" });
+          }
+        }
+        setReadyFor(editingId);
+      } catch {
+        if (editingId) { router.replace(bulletinHref(editingId)); return; }
+        setError("root", { message: "브라우저 저장 공간을 확인해 주세요" });
+        setReadyFor(editingId);
+      }
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      activeEdit.current = null;
+      // Strict Mode immediately reconnects the same editor; only close an abandoned edit session.
+      queueMicrotask(() => {
+        if (editingId && activeEdit.current !== editingId) {
+          try { endBulletinEdit(editingId); } catch { /* Storage can be disabled while editing. */ }
+        }
+      });
+    };
+  }, [editingId, reset, setError, router]);
 
   const navigate = (nextStep: number, nextView?: WeeklyView, group?: number) => {
     const params = new URLSearchParams({ step: String(nextStep) });
+    if (editingId) params.set("bulletin", editingId);
     if (nextView && nextView !== "options") params.set("view", nextView);
     if (group !== undefined) params.set("group", String(group));
     window.history.pushState(null, "", `/weekly?${params}`);
   };
   const finishIntro = useCallback(() => window.history.replaceState(null, "", "/weekly?step=1"), []);
-  const saveDraft = () => {
+  const save = (close = false) => startTransition(async () => {
+    clearErrors("root");
+    // Paint the spinner before synchronous browser storage; replace this await with the API later.
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     try {
-      localStorage.setItem(weeklyDraftKey, JSON.stringify(getValues()));
-      toast("임시저장했어요", { description: "이 브라우저에서 이어서 작업할 수 있어요" });
-      return true;
-    } catch {
-      setError("root", { message: "저장 공간이 부족해요. 사진 크기를 줄이거나 브라우저 저장 공간을 확인해 주세요" });
-      return false;
+      const record = saveBulletin(getValues(), editingId);
+      if (loadedLegacy.current) {
+        localStorage.removeItem(legacyDraftKey);
+        loadedLegacy.current = false;
+      }
+      toast("저장했어요", { position: "top-center", description: "이 브라우저에 저장됐어요" });
+      if (close) {
+        endBulletinEdit(record.id);
+        router.push(bulletinHref(record.id));
+      } else if (!editingId) {
+        allowBulletinEdit(record.id);
+        const params = new URLSearchParams(window.location.search);
+        params.set("bulletin", record.id);
+        window.history.replaceState(null, "", `/weekly?${params}`);
+      }
+    } catch (error) {
+      const message = error instanceof DOMException ? "저장 공간이 부족해요. 사진 크기를 줄이거나 브라우저 저장 공간을 확인해 주세요" : error instanceof Error ? error.message : "저장하지 못했어요. 다시 시도해 주세요";
+      setError("root", { message });
+      toast.error(message, { position: "top-center" });
     }
-  };
+  });
   const finishContent = () => navigate(3);
   const afterSermon = () => getValues("sections").includes("family") ? navigate(2, "families") : finishContent();
   const next = async () => {
@@ -91,24 +143,20 @@ export function WeeklyMockup() {
 
   if (search.get("intro") === "1") return <div className="home-theme fixed inset-0 z-40"><WorkIntro onComplete={finishIntro} /></div>;
 
+  if (readyFor !== editingId) return <main className="flex min-h-svh flex-1 items-center justify-center gap-2"><Spinner />주보를 불러오는 중이에요</main>;
+
   return (
     <FormProvider {...methods}>
       <SermonPagesProvider>
       <main ref={main} className={`weekly-main min-w-0 flex-1 ${step > 1 ? "pb-[100px]" : ""}`} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
-      {step === 1 ? <PublishDate onNext={() => { methods.setValue("sermon.date", getValues("date")); navigate(2); }} onSave={saveDraft} /> : (
+      {step === 1 ? <PublishDate onNext={() => { if (!editingId) methods.setValue("sermon.date", getValues("date")); navigate(2); }} onSave={() => save()} saving={pending} lockedDate={editingId ?? undefined} /> : (
         <>
           <WeeklyHeading step={step} title={title} description={step === 2 && (view === "options" || view === "family-preview") ? "해당되지 않는 것은 제외해 주세요" : undefined} />
           <div key={`${step}-${view}-${groupIndex}`} className="weekly-content weekly-page-enter">
             {step === 3 ? <WeeklyResults /> : view === "options" ? <Configuration /> : view === "sermon" || view === "sermon-preview" ? <SermonEditor preview={view === "sermon-preview"} /> : view === "families" ? <FamilyList onEdit={(index) => navigate(2, "family-edit", index)} /> : view === "family-edit" ? <FamilyEditor index={groupIndex} /> : <FamilyPreview onEdit={(index) => navigate(2, "family-edit", index)} />}
           </div>
           <div className="mx-auto max-w-[480px] px-4"><FieldError errors={[errors.root]} /></div>
-          <WeeklyFooter onBack={back} onSave={saveDraft} busy={pending} onNext={step !== 3 ? next : () => startTransition(async () => {
-            // Paint the busy state before local storage work; await the API here when connected.
-            await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-            if (!saveDraft()) return;
-            setOpen(true);
-            router.push("/home");
-          })} nextLabel={step === 3 ? "완료" : "다음"} />
+          <WeeklyFooter onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={step === 3 ? "저장" : "다음"} />
         </>
       )}
       </main>

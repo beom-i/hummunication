@@ -26,12 +26,12 @@ export function WeeklyHeading({ step, title, description }: { step: number; titl
   );
 }
 
-export function WeeklyFooter({ onBack, onSave, onNext, nextLabel = "다음", busy = false }: { onBack: () => void; onSave: () => void; onNext: () => void; nextLabel?: string; busy?: boolean }) {
+export function WeeklyFooter({ onBack, onSave, onNext, nextLabel = "다음", busy = false, showSave = true }: { onBack: () => void; onSave: () => void; onNext: () => void; nextLabel?: string; busy?: boolean; showSave?: boolean }) {
   return (
     <footer className="weekly-footer sticky bottom-0 z-20 flex min-h-20 items-center gap-3 border-t border-border bg-card px-10 py-4 max-sm:px-4">
       <Button variant="ghost" disabled={busy} onClick={onBack} className="mr-auto gap-1 text-base text-secondary-foreground"><Image src="/images/weekly/33936.svg" alt="" width={20} height={21} />이전</Button>
-      <Button variant="secondary" disabled={busy} size="workflow" onClick={onSave}>임시저장</Button>
-      <Button size="workflow" loading={busy} onClick={onNext} className="w-[156px] px-4 max-sm:w-[100px]">{nextLabel}</Button>
+      {showSave && <Button variant="secondary" loading={busy} size="workflow" onClick={onSave}>저장</Button>}
+      <Button size="workflow" disabled={busy} loading={busy && !showSave} onClick={onNext} className="w-[156px] px-4 max-sm:w-[100px]">{nextLabel}</Button>
     </footer>
   );
 }

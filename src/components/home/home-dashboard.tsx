@@ -1,18 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { mockBulletins, type BulletinPreview } from "./mock-bulletins";
+import { mockBulletins } from "./mock-bulletins";
+import { recentBulletins } from "@/components/bulletins/local-store";
+import { bulletinHref, bulletinTitle } from "@/components/bulletins/format";
 import "./home-motion.css";
 
 const asset = "/images/home/";
 
 export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
-  const [preview, setPreview] = useState<BulletinPreview | null>(null);
+  const [bulletins, setBulletins] = useState(mockBulletins);
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        setBulletins(recentBulletins().map(record => {
+          const [month, week] = bulletinTitle(record.id).replace(" 주보", "").split(" ");
+          return { id: record.id, month, week, publishedAt: `${Number(record.id.slice(5, 7))}/${Number(record.id.slice(-2))}`, previewImage: "/images/home/bulletin-preview.png" };
+        }));
+      } catch { toast.error("저장된 주보를 불러오지 못했어요. 브라우저 저장 공간을 확인해 주세요"); }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <main className="min-w-0 flex-1 px-[51px] pt-20 pb-12 max-md:px-6">
@@ -45,10 +59,10 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
               <Image src={`${asset}document.png`} alt="" width={36} height={36} />
               <h2 id="recent-heading" className="text-xl leading-[normal] font-extrabold tracking-[-1.2px]">최근 만든 주보</h2>
             </div>
-            <Button variant="ghost" size="sm" className="px-3 tracking-[-0.84px] hover:bg-card/10" onClick={() => toast("최근 만든 주보를 모두 표시하고 있어요")}>전체 보기 →</Button>
+            <Button variant="ghost" size="sm" className="px-3 tracking-[-0.84px] hover:bg-card/10" onClick={() => setShowAll(value => !value)}>{showAll ? "접기" : "전체 보기 →"}</Button>
           </div>
           <div className="mt-[21px] grid grid-cols-4 gap-[18px] max-lg:grid-cols-2 max-sm:grid-cols-1">
-            {mockBulletins.slice(0, 4).map((bulletin) => (
+            {bulletins.slice(0, showAll ? bulletins.length : 4).map((bulletin) => (
               <Card key={bulletin.id} data-bulletin-id={bulletin.id} className="bulletin-card relative isolate h-[164px] w-full gap-0 overflow-visible rounded-[10px] bg-transparent p-0 shadow-none ring-0">
                 <div className="bulletin-reveal absolute inset-x-0 top-0 h-[164px] overflow-hidden rounded-[10px] border border-bulletin-border">
                   <div className="bulletin-photo pointer-events-none absolute top-[164px] -left-px h-[122px] w-[calc(100%+2px)] overflow-hidden rounded-[9px] border-3 border-bulletin-photo-border" aria-hidden="true">
@@ -67,22 +81,13 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
                     </div>
                     <Image src={`${asset}bulletin-edge.svg`} alt="" width={196} height={25} className="h-auto w-full -scale-y-100" />
                   </div>
-                  <Button onClick={() => setPreview(bulletin)} aria-label={`${bulletin.month} ${bulletin.week} 주보 미리보기`} className="absolute inset-0 h-full w-full rounded-[10px] border-0 bg-transparent p-0 hover:bg-transparent active:translate-y-0" />
+                  <Button asChild className="absolute inset-0 h-full w-full rounded-[10px] border-0 bg-transparent p-0 hover:bg-transparent active:translate-y-0"><Link href={bulletinHref(bulletin.id)} aria-label={`${bulletin.month} ${bulletin.week} 주보 상세 보기`} /></Button>
                 </div>
               </Card>
             ))}
           </div>
         </section>
       </div>
-      <Dialog open={preview !== null} onOpenChange={(open) => { if (!open) setPreview(null); }}>
-        <DialogContent className="home-theme">
-          <DialogHeader>
-            <DialogTitle>{preview?.month} {preview?.week} 주보</DialogTitle>
-            <DialogDescription>{preview?.publishedAt} 발행</DialogDescription>
-          </DialogHeader>
-          {preview && <Image src={preview.previewImage} alt="주보 표지 목업" width={720} height={514} sizes="(max-width: 480px) 90vw, 400px" className="h-auto w-full rounded-lg" />}
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }

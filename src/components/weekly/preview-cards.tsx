@@ -92,18 +92,19 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
 export function BulletinCard({ cover = false }: { cover?: boolean }) {
   const { control } = useFormContext<WeeklyFormData>();
   const date = useWatch({ control, name: "date" });
+  const month = Number(date.slice(5, 7));
   const week = ["첫째", "둘째", "셋째", "넷째", "다섯째"][Math.floor((Number(date.slice(-2)) - 1) / 7)];
   return <CardFrame label={cover ? "주보 표지" : "주보 썸네일"}>
     {!cover ? <>
       <rect width="300" height="375" fill="var(--thumbnail-paper)" /><rect x="15" y="85" width="270" height="193" fill="var(--sermon-red)" />
       <image href={`${asset}6cc93.svg`} x="145.52" y="108" width="8.96" height="13.513" /><text x="150" y="170" textAnchor="middle" fill="var(--art-white)" fontSize="25" fontWeight="bold"><tspan x="150">온누리교회</tspan><tspan x="150" dy="31">허브대학부</tspan></text>
-      <rect x="90" y="220" width="120" height="22" rx="11" fill="var(--art-ink)" /><text x="150" y="234" textAnchor="middle" fill="var(--art-white)" fontSize="8">· 11월 {week}주 주보 ·</text>
+      <rect x="90" y="220" width="120" height="22" rx="11" fill="var(--art-ink)" /><text x="150" y="234" textAnchor="middle" fill="var(--art-white)" fontSize="8">· {month}월 {week}주 주보 ·</text>
     </> : <>
       <rect width="300" height="375" fill="var(--cover-paper)" /><rect width="300" height="24" fill="var(--sermon-red)" /><text x="150" y="15" textAnchor="middle" fill="var(--art-white)" fontSize="6">+ 십자가를 지고 나를 따르라</text>
       <text x="150" y="71" textAnchor="middle" fill="var(--sermon-red)" fontFamily="serif" fontWeight="bold" fontSize="14">온누리교회 허브대학부</text>
       <path d="M60 292V178A90 90 0 0 1 240 178V292Z" fill="var(--sermon-red)" /><text x="150" y="133" textAnchor="middle" fill="var(--art-white)" fontFamily="Georgia, serif" fontSize="24"><tspan x="150">FOLLOW</tspan><tspan x="150" dy="26">JESUS</tspan></text>
       <image href={`${asset}677c8.svg`} x="137.625" y="186" width="24.75" height="37.326" /><image href={`${asset}e00b8.svg`} x="115" y="242" width="70" height="70" />
-      <text x="150" y="343" textAnchor="middle" fill="var(--sermon-red)" fontSize="13" fontFamily="serif" fontWeight="bold">11월 {week}주 주보</text><rect y="361" width="300" height="14" fill="var(--sermon-red)" />
+      <text x="150" y="343" textAnchor="middle" fill="var(--sermon-red)" fontSize="13" fontFamily="serif" fontWeight="bold">{month}월 {week}주 주보</text><rect y="361" width="300" height="14" fill="var(--sermon-red)" />
     </>}
   </CardFrame>;
 }

@@ -21,3 +21,10 @@ for (const [width, height] of [[1200, 800], [800, 1200], [100, 100]]) {
 }
 assert.deepEqual(photoGeometry(1200, 800, 90), { width: 800, height: 1200, transform: 'translate(800 0) rotate(90)' });
 console.log('PASS: bounded fixed-aspect selections for landscape, portrait, square and all quarter turns');
+
+const { bulletinDateCode, bulletinTitle, bulletinHref } = await import('../src/components/bulletins/format.ts');
+assert.equal(bulletinDateCode('2030-12-31'), '301231');
+assert.equal(bulletinDateCode('2030-01-01'), '300101');
+assert.equal(bulletinTitle('2030-12-31'), '12월 다섯째주 주보');
+assert.equal(bulletinHref('2030-12-31'), '/bulletins?date=2030-12-31');
+console.log('PASS: publication date edit code, week title and detail URL');

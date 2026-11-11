@@ -2,7 +2,7 @@ import type { DefaultValues } from "react-hook-form";
 import { z } from "zod";
 import { richDocumentSchema, documentFromText, documentText } from "@/components/ui/rich-text-editor/schemas";
 const publishDateSchema = z.object({
-  date: z.enum(["2026-11-08", "2026-11-15", "2026-11-22", "2026-11-29"], { error: "발행 날짜를 선택해 주세요" }),
+  date: z.iso.date("발행 날짜를 선택해 주세요"),
 });
 
 export const sectionOptions = [
