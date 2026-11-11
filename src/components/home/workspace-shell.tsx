@@ -14,13 +14,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const weekly = pathname === "/weekly" || pathname === "/bulletins";
   const [entering, setEntering] = useState(!weekly);
+  const showComingSoon = () => toast("개발 중이에요", { position: "top-center", style: { pointerEvents: "none" } });
 
   return (
     <TooltipProvider delayDuration={150}>
       <SidebarProvider defaultOpen={!weekly} style={{ "--sidebar-width-icon": "64px" } as React.CSSProperties}>
         <div className="home-scene flex min-h-svh w-full" data-view={weekly ? "weekly" : "home"} data-entering={entering}>
           <div className="contents" inert={entering}>
-          <AppSidebar active={weekly ? "weekly" : "home"} onHome={() => router.push("/home")} onCardNews={() => toast("카드뉴스 만들기는 준비 중이에요")} onTeam={() => toast("팀원 화면을 준비하고 있어요")} />
+          <AppSidebar active={weekly ? "weekly" : "home"} onHome={() => router.push("/home")} onCardNews={showComingSoon} onTeam={showComingSoon} />
           <SidebarTrigger aria-label="메뉴 열기" className="fixed top-4 left-4 z-20 bg-background md:hidden" />
           {children}
           </div>

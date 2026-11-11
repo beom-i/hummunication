@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 repo="beom-i/hummunication"
-production_url="https://hummunication.vercel.app/home"
+production_url="https://hummunication.com/home"
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 trap 'printf "배포가 중단됐어요 (%s행). 오류를 확인한 후 다시 실행해 주세요.\n" "$LINENO" >&2' ERR
 

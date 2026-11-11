@@ -66,12 +66,37 @@ for(const [index,button] of geometry.buttons.entries()) {
 }
 if(Math.abs(geometry.logo.x-18)>1||Math.abs(geometry.logo.y-20)>1||geometry.logo.width!==28||geometry.avatar.width!==28||Math.abs(geometry.avatar.y-976)>1) throw new Error('Rail logo/avatar geometry: '+JSON.stringify(geometry));
 await page.click('button[aria-label="카드뉴스 만들기"]');
-await page.waitForSelector('text="카드뉴스 만들기는 준비 중이에요"');
+await page.waitForSelector('text="개발 중이에요"');
 if(new URL(await page.url()).pathname!=="/home") throw new Error("Card news opened weekly");
+await page.waitForFunction(()=>!document.querySelector('[data-sonner-toast]'));
+await page.click('button[aria-label="팀원"]');
+await page.waitForSelector('text="개발 중이에요"');
+if(new URL(await page.url()).pathname!=="/home") throw new Error("Team left the current page");
 await page.click('button[aria-label="강단 라인업 자동화 시작하기"]');
 await page.waitForURL('**/weekly?step=1&intro=1');
 await page.waitForSelector('.weekly-main h1', {timeout:10000});
 await page.click('button[aria-label="카드뉴스 만들기"]');
 if(new URL(await page.url()).pathname!=="/weekly") throw new Error("Card news left the current work");
 console.log("PASS: Figma rail geometry; card news stays put; automation opens /weekly");
+await page.cdp("Emulation.setDeviceMetricsOverride", {width:320,height:800,screenWidth:320,screenHeight:800,deviceScaleFactor:1,mobile:true});
+await page.goto(new URL("/weekly?step=1", await page.url()).href);
+await page.waitForSelector('.weekly-main h1');
+await page.waitForFunction(()=>!document.querySelector('[data-slot="sidebar-container"]'));
+await page.click('button[aria-label="메뉴 열기"]');
+await page.waitForSelector('[role="dialog"]');
+const mobileURL = await page.url();
+await page.click('[role="dialog"] button[aria-label="팀원"]');
+await page.waitForSelector('[role="dialog"]', {state:"hidden"});
+await page.waitForFunction(()=>document.body.style.pointerEvents!=="none"&&!!document.querySelector('[data-sonner-toast]'));
+if (!await page.evaluate(()=>{
+  const menu = document.querySelector('button[aria-label="메뉴 열기"]');
+  const rect = menu.getBoundingClientRect();
+  return menu.contains(document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2));
+})) throw new Error("Coming-soon notice blocks reopening the mobile menu");
+await page.click('button[aria-label="메뉴 열기"]');
+await page.waitForSelector('[role="dialog"]');
+await page.click('[role="dialog"] button[aria-label="카드뉴스 만들기"]');
+await page.waitForSelector('[role="dialog"]', {state:"hidden"});
+if (await page.url()!==mobileURL) throw new Error("Mobile placeholder navigation left the current work");
+console.log("PASS: mobile notices close the menu, preserve the page and allow immediate reopening");
 JS

@@ -1,7 +1,10 @@
 import { updateSession } from "@/lib/supabase/proxy";
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  if (["/", "/home", "/weekly", "/bulletins"].includes(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
   return await updateSession(request);
 }
 
