@@ -19,7 +19,7 @@ try {
   await page.cdp("Network.emulateNetworkConditions", {offline:false,latency:180,downloadThroughput:500000,uploadThroughput:500000});
   const brandHeight = await page.evaluate(() => document.querySelector('[data-slot="sidebar-header"] button > span').getBoundingClientRect().height);
   for (let cycle=0; cycle<3; cycle++) {
-    for (const [label, width] of [["사이드바 접기",46],["사이드바 펼치기",256]]) {
+    for (const [label, width] of [["사이드바 접기",64],["사이드바 펼치기",256]]) {
       await page.evaluate(({label,width}) => {
         window.__sidebarFrames = {frames:[],done:false};
         let start;
@@ -31,7 +31,7 @@ try {
             for(let e=image;e&&e!==sidebar;e=e.parentElement) opacity*=Number(getComputedStyle(e).opacity);
             return image.getBoundingClientRect().width>0&&opacity>0.1&&(!image.complete||image.naturalWidth===0);
           }).length;
-          window.__sidebarFrames.frames.push({width:sidebar.getBoundingClientRect().width,missing,brandHeight:sidebar.querySelector('[data-slot="sidebar-header"] button > span').getBoundingClientRect().height});
+          window.__sidebarFrames.frames.push({width:sidebar.getBoundingClientRect().width,gap:document.querySelector('[data-slot="sidebar-gap"]').getBoundingClientRect().width,missing,brandHeight:sidebar.querySelector('[data-slot="sidebar-header"] button > span').getBoundingClientRect().height});
           settled=Math.abs(sidebar.getBoundingClientRect().width-width)<0.5?settled+1:0;
           if(settled<3&&performance.now()-start<5000) requestAnimationFrame(record); else window.__sidebarFrames.done=true;
         }
@@ -45,6 +45,7 @@ try {
       const frames=await page.evaluate(()=>window.__sidebarFrames.frames);
       if(frames.some(f=>f.missing)) throw new Error("SIDEBAR_FLICKER: visible image not decoded");
       if(frames.some(f=>f.brandHeight>brandHeight+1)) throw new Error("SIDEBAR_FLICKER: brand text wraps during transition");
+      if(frames.some(f=>Math.abs(f.width-f.gap)>1)) throw new Error("Sidebar and content move at different speeds");
       if(Math.abs(frames.at(-1).width-width)>0.5) throw new Error("Sidebar width "+frames.at(-1).width+"; expected "+width);
     }
   }
@@ -54,4 +55,23 @@ try {
   await page.cdp("Network.emulateNetworkConditions", {offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await page.evaluate(()=>{delete window.__sidebarFrames;});
 }
+await page.click('button[aria-label="사이드바 접기"]');
+await page.waitForFunction(()=>Math.abs(document.querySelector('[data-slot="sidebar-container"]').getBoundingClientRect().width-64)<0.5);
+const geometry=await page.evaluate(()=>{
+  const rect=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
+  return {logo:rect('.sidebar-brand img'),buttons:[...document.querySelectorAll('[data-slot="sidebar-content"] button')].map(b=>{const r=b.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};}),avatar:rect('[data-slot="avatar"]')};
+});
+for(const [index,button] of geometry.buttons.entries()) {
+  if(Math.abs(button.x-14)>1||Math.abs(button.y-(104+60*index))>1||Math.abs(button.width-36)>1||Math.abs(button.height-36)>1) throw new Error('Rail button geometry: '+JSON.stringify(geometry));
+}
+if(Math.abs(geometry.logo.x-18)>1||Math.abs(geometry.logo.y-20)>1||geometry.logo.width!==28||geometry.avatar.width!==28||Math.abs(geometry.avatar.y-976)>1) throw new Error('Rail logo/avatar geometry: '+JSON.stringify(geometry));
+await page.click('button[aria-label="카드뉴스 만들기"]');
+await page.waitForSelector('text="카드뉴스 만들기는 준비 중이에요"');
+if(new URL(await page.url()).pathname!=="/home") throw new Error("Card news opened weekly");
+await page.click('button[aria-label="강단 라인업 자동화 시작하기"]');
+await page.waitForURL('**/weekly?step=1&intro=1');
+await page.waitForSelector('.weekly-main h1', {timeout:10000});
+await page.click('button[aria-label="카드뉴스 만들기"]');
+if(new URL(await page.url()).pathname!=="/weekly") throw new Error("Card news left the current work");
+console.log("PASS: Figma rail geometry; card news stays put; automation opens /weekly");
 JS
