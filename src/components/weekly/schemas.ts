@@ -26,9 +26,9 @@ export const photoEditSchema = z.object({
   return Math.abs((edit.crop.width * w) / (edit.crop.height * h) - 119 / 71) < 0.01;
 }, "사진 비율을 확인해 주세요");
 export type PhotoEdit = z.infer<typeof photoEditSchema>;
-export const cropFormSchema = z.object({ position: z.object({ x: z.number(), y: z.number() }), zoom: z.number().min(1).max(5), rotation: photoEditSchema.shape.rotation });
+export const cropFormSchema = z.object({ area: photoEditSchema.shape.crop, rotation: photoEditSchema.shape.rotation });
 export type CropFormData = z.infer<typeof cropFormSchema>;
-export const cropDefaultValues: DefaultValues<CropFormData> = { position: { x: 0, y: 0 }, zoom: 1, rotation: 0 };
+export const cropDefaultValues: DefaultValues<CropFormData> = { area: { x: 0, y: 0, width: 1, height: 1 }, rotation: 0 };
 export const familySchema = z.object({
   name: required,
   photo: z.string().refine((value) => value === "" || /^data:image\/(png|jpeg|webp);base64,/.test(value), "사진을 다시 올려 주세요"),

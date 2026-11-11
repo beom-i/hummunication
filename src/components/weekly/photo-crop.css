@@ -1,0 +1,4 @@
+.photo-frame-crop { flex-shrink: 0; width: min(100%, calc(336px * var(--photo-ratio))); }
+@media (max-width: 639px) {
+  .photo-frame-crop { width: min(100%, calc(276px * var(--photo-ratio))); }
+}
