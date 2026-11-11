@@ -45,7 +45,7 @@ export function SermonEditor({ preview }: { preview: boolean }) {
   return <div className="weekly-sermon-layout mt-[70px] flex items-start gap-8 max-lg:flex-col">
     <div className="w-[380px] shrink-0 max-lg:w-full">
       {preview ? <Field className="gap-2" data-invalid={!!errors.sermon?.document}>
-        <FieldLabel htmlFor="sermon-content" className="text-sm font-semibold text-secondary-foreground">정리 내용</FieldLabel>
+        <FieldLabel htmlFor="sermon-content" className="text-sm leading-5 font-semibold text-secondary-foreground">정리 내용</FieldLabel>
         <Controller control={control} name="sermon.document" render={({ field }) => <RichTextEditor id="sermon-content" value={field.value} onChange={value => {
           field.onChange(value);
           const result = richDocumentSchema.safeParse(value);
@@ -55,9 +55,9 @@ export function SermonEditor({ preview }: { preview: boolean }) {
         <FieldError errors={[errors.sermon?.document]} />
       </Field> : <SermonFields />}
     </div>
-    <section className="min-w-0 flex-1 rounded-3xl bg-card p-6 max-lg:w-full" aria-label={preview ? "설교 본문 카드뉴스 미리보기" : "설교 표지 미리보기"} aria-busy={preview && !ready}>
+    <section className={`min-w-0 flex-1 rounded-3xl bg-card p-6 max-lg:w-full ${preview ? "lg:mt-7" : ""}`} aria-label={preview ? "설교 본문 카드뉴스 미리보기" : "설교 표지 미리보기"} aria-busy={preview && !ready}>
       {!preview ? <><h2 className="mb-5 text-lg font-bold">표지 미리보기</h2><figure className="mx-auto w-full max-w-[360px]">{openCard(0, <SermonCard index={0} />)}<figcaption className="mt-3 text-sm text-secondary-foreground">1 표지</figcaption></figure></> : <>
-        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold tracking-[-0.72px]">본문 카드뉴스 {pages.length}장</h2><span className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">{errors.sermon?.document ? "입력 내용을 확인해 주세요" : ready ? "실시간 반영됨" : <><Spinner className="size-3" />페이지 계산 중…</>}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold tracking-[-0.72px]">본문 카드뉴스 {pages.length}장</h2>{(errors.sermon?.document || !ready) && <span className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">{errors.sermon?.document ? "입력 내용을 확인해 주세요" : <><Spinner className="size-3" />페이지 계산 중…</>}</span>}</div>
         <Tabs defaultValue="album" className="mt-4">
           <TabsList variant="line" aria-label="보기 방식">
             <TabsTrigger value="album" className="gap-2"><Image src="/images/weekly/0f022.svg" alt="" width={16} height={16} />앨범형</TabsTrigger>
