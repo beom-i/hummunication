@@ -29,7 +29,7 @@ export function DatePicker({ value, onValueChange, className, ...props }: DatePi
       <Calendar mode="single" required selected={selected} defaultMonth={selected} locale={ko} autoFocus onSelect={(date) => {
         onValueChange(format(date, "yyyy-MM-dd"));
         setOpen(false);
-      }} className="w-full rounded-2xl [--cell-size:min(40px,calc((var(--radix-popover-trigger-width)_-_24px)/7))]" classNames={{ root: "w-full", month_grid: "w-full table-fixed" }} />
+      }} className="w-full rounded-2xl [--cell-size:min(40px,calc((var(--radix-popover-trigger-width)_-_24px)/7))]" classNames={{ root: "w-full", month_grid: "w-full table-fixed", caption_label: "text-lg font-semibold", day_button: "text-base sm:text-lg" }} />
     </PopoverContent>
   </Popover>;
 }

@@ -70,7 +70,7 @@ function Button({
       {...props}
     >
       {loading && <Spinner aria-hidden="true" className="size-[18px]" />}
-      {children}
+      <Slot.Slottable>{children}</Slot.Slottable>
     </Comp>
   )
 }

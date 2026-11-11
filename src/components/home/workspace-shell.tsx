@@ -12,7 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const weekly = pathname === "/weekly";
+  const weekly = pathname === "/weekly" || pathname === "/bulletins";
   const [entering, setEntering] = useState(!weekly);
 
   return (
