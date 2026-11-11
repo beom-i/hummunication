@@ -1,6 +1,9 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { useEffect, useRef } from "react";
+import { useSermonPages } from "./sermon-pagination";
+import { CroppedPhoto } from "./photo-crop";
 import type { WeeklyFormData } from "./schemas";
 
 const asset = "/images/weekly/";
@@ -28,12 +31,25 @@ function CardFrame({ children, label, family = false }: { children: React.ReactN
 export function SermonCard({ index }: { index: number }) {
   const { control } = useFormContext<WeeklyFormData>();
   const sermon = useWatch({ control, name: "sermon" });
-  // shortcut: the mock uses seven fixed pages; replace this with generated pagination when the content API is connected.
-  const paragraphs = sermon.content.split(/\n\s*\n/).filter(Boolean);
-  const text = paragraphs[(index - 1) % Math.max(1, paragraphs.length)] ?? sermon.content;
+  const { pages } = useSermonPages();
+  const frame = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = frame.current;
+    if (!node) return;
+    const observer = new ResizeObserver(([entry]) => node.style.setProperty("--sermon-scale", String(entry.contentRect.width / 480)));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [index]);
+  if (index > 0) return <div ref={frame} className="news-card sermon-html-card" role="img" aria-label={`설교 정리 ${index + 1}페이지`}>
+    <div className="sermon-sheet" data-export-html>
+      <div className="sermon-sheet-header">십자가를 지고 나를 따르라</div>
+      <div className="sermon-sheet-body sermon-rich-text" dangerouslySetInnerHTML={{ __html: pages[index - 1] ?? "" }} />
+      <div className="sermon-sheet-footer">HUB COMMUNITY</div>
+    </div>
+  </div>;
   return <CardFrame label={`설교 정리 ${index === 0 ? "표지" : `${index + 1}페이지`}`}>
     <rect width="300" height={index === 0 ? 64 : 40} fill="var(--sermon-red)" />
-    {index === 0 ? <>
+    <>
       <text x="150" y="29" textAnchor="middle" fill="var(--art-white)" fontFamily="Georgia, serif" fontWeight="bold" fontSize="21">FOLLOW</text>
       <rect x="128" y="36" width="44" height="16" rx="8" fill="var(--art-ink)" /><text x="150" y="47" textAnchor="middle" fill="var(--art-white)" fontFamily="Georgia, serif" fontSize="9">JESUS</text>
       <text x="150" y="117" textAnchor="middle" fill="var(--art-ink)" fontSize="8" fontWeight="bold">{sermon.date.replaceAll("-", ".")} 허브 예배 | {sermon.speaker}</text>
@@ -41,10 +57,7 @@ export function SermonCard({ index }: { index: number }) {
       <text x="150" y="173" textAnchor="middle" fill="var(--art-white)" fontSize="6" letterSpacing="1.2">HUB COMMUNITY</text>
       <text x="150" y="203" textAnchor="middle" fill="var(--art-white)" fontFamily="Georgia, serif" fontSize="18">{textLines(sermon.title, 13).slice(0, 3).map((line, i) => <tspan key={i} x="150" dy={i ? 23 : 0}>{line}</tspan>)}</text>
       <text x="150" y="302" textAnchor="middle" fill="var(--art-copy)" fontSize="7">{sermon.passage}</text><text x="150" y="317" textAnchor="middle" fill="var(--art-copy)" fontSize="7">{sermon.speaker}</text>
-    </> : <>
-      <text x="150" y="25" textAnchor="middle" fill="var(--art-white)" fontFamily="Georgia, serif" fontSize="11">십자가를 지고 나를 따르라</text>
-      <text x="24" y="68" fill="var(--art-copy)" fontSize="10" fontFamily="serif">{textLines(text, 25).slice(0, 19).map((line, i) => <tspan key={i} x="24" dy={i ? 16 : 0}>{line}</tspan>)}</text>
-    </>}
+    </>
     <rect y="356" width="300" height="19" fill="var(--sermon-red)" /><text x="150" y="368" textAnchor="middle" fill="var(--art-white)" fontSize="5" fontWeight="bold" letterSpacing="1">HUB COMMUNITY</text>
   </CardFrame>;
 }
@@ -65,7 +78,7 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
       <text x="150" y="55" textAnchor="middle" fill="var(--family-green)" fontSize="28.8" fontFamily="Georgia, serif" fontWeight="bold">NEW FAMILY</text>
       <image href={`${asset}f5cdb.svg`} x="24" y="73" width="252" height="85.5" /><text x="150" y="148" textAnchor="middle" fill="var(--art-white)" fontSize="9.6" fontWeight="bold">({group.name})</text>
       <rect x="24" y="158.5" width="252" height="156" fill="var(--family-brown)" /><rect x="31" y="165" width="238" height="142" fill="var(--family-photo)" />
-      {group.photo ? <image href={group.photo} x="31" y="165" width="238" height="142" preserveAspectRatio="xMidYMid slice" /> : <text x="150" y="292" textAnchor="middle" fill="var(--art-white)" fontSize="6" opacity="0.5">순 단체사진</text>}
+      {group.photo ? <CroppedPhoto source={group.photo} edit={group.photoEdit} x={31} y={165} width={238} height={142} label="순 단체사진" /> : <text x="150" y="292" textAnchor="middle" fill="var(--art-white)" fontSize="6" opacity="0.5">순 단체사진</text>}
       <path d="M24 322H276" stroke="var(--family-brown)" strokeWidth="1.2" /><text x="150" y="339" textAnchor="middle" fill="var(--family-brown)" fontSize="8" fontWeight="bold">{people.map((person) => person.name).join(" | ")}</text>
     </> : <>
       <image href={`${asset}94075.svg`} x="129" y="18" width="42" height="14.25" /><text x="150" y="54" textAnchor="middle" fill="var(--family-brown)" fontSize="13.8" fontFamily="serif" fontWeight="bold">( 허브 ) 가 좋은 이유 ?</text>

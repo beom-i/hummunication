@@ -15,6 +15,7 @@ import { SermonEditor } from "./sermon-editor";
 import { FamilyList, FamilyEditor, FamilyPreview } from "./family-editor";
 import { WeeklyResults } from "./weekly-results";
 import { weeklyDefaultValues, weeklyDraftSchema, weeklySchema, type WeeklyFormData } from "./schemas";
+import { SermonPagesProvider } from "./sermon-pagination";
 
 export const weeklyDraftKey = "hummunication.weekly-draft";
 const views = ["options", "sermon", "sermon-preview", "families", "family-edit", "family-preview"] as const;
@@ -68,8 +69,8 @@ export function WeeklyMockup() {
       else if (sections.includes("family")) navigate(2, "families");
       else finishContent();
     } else if (view === "sermon") {
-      if (await trigger("sermon")) navigate(2, "sermon-preview");
-    } else if (view === "sermon-preview") afterSermon();
+      if (await trigger(["sermon.date", "sermon.speaker", "sermon.title", "sermon.passage"])) navigate(2, "sermon-preview");
+    } else if (view === "sermon-preview") { if (await trigger("sermon.document")) afterSermon(); }
     else if (view === "families") { if (await trigger("groups")) navigate(2, "family-preview"); }
     else if (view === "family-edit") {
       if (await trigger(`groups.${groupIndex}`)) navigate(2, "families");
@@ -86,12 +87,13 @@ export function WeeklyMockup() {
   const groupParam = Number(search.get("group") ?? 0);
   const groupIndex = Number.isInteger(groupParam) && groupParam >= 0 && groupParam < getValues("groups").length ? groupParam : 0;
   useEffect(() => { main.current?.scrollTo({ top: 0, behavior: "instant" }); }, [step, view, groupIndex]);
-  const title = step === 3 ? "결과물 확인 및 추출" : view === "options" ? "어떤 구성으로 만들까요?" : view === "sermon" ? "설교 정리 내용" : view === "sermon-preview" ? "설교 정리본 미리보기" : view === "family-preview" ? "새가족 문답 미리보기" : "새가족 문답 내용";
+  const title = step === 3 ? "결과물 확인 및 추출" : view === "options" ? "어떤 구성으로 만들까요?" : view === "sermon" ? "설교 기본 정보" : view === "sermon-preview" ? "설교 정리 내용" : view === "family-preview" ? "새가족 문답 미리보기" : "새가족 문답 내용";
 
   if (search.get("intro") === "1") return <div className="home-theme fixed inset-0 z-40"><WorkIntro onComplete={finishIntro} /></div>;
 
   return (
     <FormProvider {...methods}>
+      <SermonPagesProvider>
       <main ref={main} className={`weekly-main min-w-0 flex-1 ${step > 1 ? "pb-[100px]" : ""}`} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
       {step === 1 ? <PublishDate onNext={() => { methods.setValue("sermon.date", getValues("date")); navigate(2); }} onSave={saveDraft} /> : (
         <>
@@ -110,6 +112,7 @@ export function WeeklyMockup() {
         </>
       )}
       </main>
+      </SermonPagesProvider>
     </FormProvider>
   );
 }

@@ -1,0 +1,6 @@
+.rich-editor-content { min-height: min(429px, 50svh); max-height: 560px; overflow-y: auto; scrollbar-gutter: stable; padding: 20px; font-size: 16px; line-height: 1.6; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rich-editor-content p { margin: 0; min-height: 25.6px; }
+.rich-editor-content strong { font-weight: 700; }
+.rich-editor-content em { font-style: italic; }
+.rich-editor-content u { text-decoration: underline; }
+.rich-editor-content s { text-decoration: line-through; }

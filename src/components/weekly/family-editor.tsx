@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FamilyCard, familyPageCount } from "./preview-cards";
 import { newFamily, photoSchema, type WeeklyFormData } from "./schemas";
+import { CroppedPhoto, PhotoCropDialog } from "./photo-crop";
 
 export function FamilyList({ onEdit }: { onEdit: (index: number) => void }) {
   const { control } = useFormContext<WeeklyFormData>();
@@ -15,8 +17,8 @@ export function FamilyList({ onEdit }: { onEdit: (index: number) => void }) {
   const groups = useWatch({ control, name: "groups" });
   return <section className="weekly-centered mx-auto mt-[54px] flex w-full max-w-[438px] flex-col items-center gap-5 max-sm:px-5" aria-label="새가족 순 목록">
     {fields.map((field, index) => <article key={field.id} className="weekly-enter w-full rounded-[30px] border bg-card p-[15px]">
-      <div className="relative flex h-36 items-center justify-center overflow-hidden rounded-2xl border bg-muted">
-        {groups[index].photo ? <Image src={groups[index].photo} alt={`${groups[index].name} 단체 사진`} fill unoptimized className="object-cover" /> : <Image src="/images/weekly/8b670.png" alt="" width={164} height={164} />}
+      <div className="relative flex aspect-[119/71] items-center justify-center overflow-hidden rounded-2xl border bg-muted">
+        {groups[index].photo ? <CroppedPhoto source={groups[index].photo} edit={groups[index].photoEdit} label={`${groups[index].name} 단체 사진`} className="absolute inset-0 size-full" /> : <Image src="/images/weekly/8b670.png" alt="" width={164} height={164} />}
       </div>
       <div className="mt-5 mb-1 flex items-center gap-[14px] px-3">
         <span className="flex size-6 items-center justify-center rounded-full bg-primary text-base font-bold text-home-brand">{index + 1}</span>
@@ -29,6 +31,7 @@ export function FamilyList({ onEdit }: { onEdit: (index: number) => void }) {
 }
 
 export function FamilyEditor({ index }: { index: number }) {
+  const [cropping, setCropping] = useState(false);
   const { register, control, setValue, setError, clearErrors, formState: { errors } } = useFormContext<WeeklyFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: `groups.${index}.members` });
   const group = useWatch({ control, name: `groups.${index}` });
@@ -40,9 +43,10 @@ export function FamilyEditor({ index }: { index: number }) {
     const result = photoSchema.safeParse(file);
     if (!result.success) { setError(`groups.${index}.photo`, { message: result.error.issues[0].message }); return; }
     const reader = new FileReader();
-    reader.onload = () => { setValue(`groups.${index}.photo`, String(reader.result), { shouldDirty: true }); clearErrors(`groups.${index}.photo`); };
+    reader.onload = () => { setValue(`groups.${index}.photo`, String(reader.result), { shouldDirty: true }); setValue(`groups.${index}.photoEdit`, undefined, { shouldDirty: true }); clearErrors(`groups.${index}.photo`); };
     reader.onerror = () => setError(`groups.${index}.photo`, { message: "사진을 다시 올려 주세요" });
     reader.readAsDataURL(file);
+    event.target.value = "";
   };
   return <section className="weekly-centered mx-auto mt-[54px] flex w-full max-w-[438px] flex-col gap-4 max-sm:px-5" aria-label="새가족 순 편집">
     <Field className="gap-[19px] rounded-[30px] border bg-card px-4 py-5">
@@ -50,15 +54,14 @@ export function FamilyEditor({ index }: { index: number }) {
       <Input id="family-name" variant="filled" className="h-[41px] rounded-2xl border text-lg" {...register(`groups.${index}.name`)} aria-invalid={!!groupErrors?.name} />
       <FieldError errors={[groupErrors?.name]} />
     </Field>
-    <Field className="gap-[19px] rounded-[30px] border bg-card px-4 py-5">
+    <Field className="gap-[19px] rounded-[30px] border bg-card px-4 py-5 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring">
       <FieldLabel htmlFor="family-photo" className="text-lg font-bold">단체 사진</FieldLabel>
       <input type="hidden" {...photoInput} />
-      <label htmlFor="family-photo" className="relative flex h-[213px] cursor-pointer flex-col items-center justify-center gap-2.5 overflow-hidden rounded-2xl border bg-muted has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring">
-        {group.photo ? <Image src={group.photo} alt="업로드한 단체 사진" fill unoptimized className="object-cover" /> : <><span className="flex size-11 items-center justify-center rounded-full bg-card"><Image src="/images/weekly/a02dc.png" alt="" width={35} height={35} /></span><span className="text-base font-semibold text-secondary-foreground">사진 올리기</span></>}
-        <input id="family-photo" type="file" accept="image/png,image/jpeg,image/webp" aria-label="단체 사진 올리기" onChange={uploadPhoto} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-      </label>
-      {group.photo && <Button variant="ghost" size="sm" className="self-start" onClick={() => setValue(`groups.${index}.photo`, "", { shouldDirty: true })}>사진 삭제</Button>}
+      {group.photo ? <button type="button" aria-label="단체 사진 크롭 편집" onClick={() => setCropping(true)} className="relative aspect-[119/71] w-full overflow-hidden rounded-2xl border bg-muted outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"><CroppedPhoto source={group.photo} edit={group.photoEdit} label="업로드한 단체 사진" className="absolute inset-0 size-full" /></button> : <label htmlFor="family-photo" className="relative flex aspect-[119/71] cursor-pointer flex-col items-center justify-center gap-2.5 overflow-hidden rounded-2xl border bg-muted"><span className="flex size-11 items-center justify-center rounded-full bg-card"><Image src="/images/weekly/a02dc.png" alt="" width={35} height={35} /></span><span className="text-base font-semibold text-secondary-foreground">사진 올리기</span></label>}
+      <input id="family-photo" type="file" accept="image/png,image/jpeg,image/webp" aria-label="단체 사진 올리기" onChange={uploadPhoto} className="sr-only" />
+      {group.photo && <div className="flex justify-center gap-3"><label htmlFor="family-photo" className="cursor-pointer rounded-md px-3 py-2 text-sm">사진 교체</label><Button variant="ghost" size="sm" onClick={() => { setValue(`groups.${index}.photo`, "", { shouldDirty: true }); setValue(`groups.${index}.photoEdit`, undefined, { shouldDirty: true }); }}>사진 삭제</Button></div>}
       <FieldError errors={[groupErrors?.photo]} />
+      {cropping && group.photo && <PhotoCropDialog source={group.photo} edit={group.photoEdit} onApply={edit => setValue(`groups.${index}.photoEdit`, edit, { shouldDirty: true })} onClose={() => setCropping(false)} />}
     </Field>
     <Divider>순장 답변</Divider>
     <div className="rounded-2xl bg-card p-[14px]">

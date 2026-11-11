@@ -253,7 +253,7 @@
 }
 .entry-splash { --splash-scale: 1; }
 .splash-stage { transform: translate(-50%, -50%) scale(var(--splash-scale)); }
-.weekly-main { display: flex; height: 100svh; flex-direction: column; overflow-y: auto; scrollbar-gutter: stable both-edges; }
+.weekly-main { display: flex; height: 100svh; flex-direction: column; overflow-y: auto; scrollbar-gutter: stable both-edges; scroll-padding-block: 24px 100px; }
 .weekly-content { flex: 1; padding-bottom: 80px; }
 .weekly-footer { position: fixed; right: 0; bottom: 0; left: var(--weekly-sidebar-offset); height: 80px; min-height: 80px; padding-block: 0; }
 .weekly-sermon-layout { width: calc(100% - 80px); max-width: 1200px; margin-inline: auto; }
