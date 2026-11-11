@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import "./sidebar-motion.css";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton,
@@ -21,10 +22,10 @@ function NavigationIcon({ name }: { name: "home" | "card-news" | "team" }) {
   );
 }
 
-export function AppSidebar({ active = "home", onHome, onCreate, onTeam }: {
+export function AppSidebar({ active = "home", onHome, onCardNews, onTeam }: {
   active?: "home" | "weekly";
   onHome: () => void;
-  onCreate: () => void;
+  onCardNews: () => void;
   onTeam: () => void;
 }) {
   const { state, toggleSidebar, setOpen, setOpenMobile, isMobile } = useSidebar();
@@ -35,15 +36,15 @@ export function AppSidebar({ active = "home", onHome, onCreate, onTeam }: {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-sidebar-border">
+    <Sidebar collapsible="icon" className="workspace-sidebar border-sidebar-border">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" onClick={toggleSidebar}
               aria-label={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
               aria-expanded={!collapsed}
-              className="relative h-12 rounded-lg duration-200 hover:bg-brand-mark hover:text-sidebar-foreground active:bg-brand-mark group-data-[collapsible=icon]:h-[50px]! group-data-[collapsible=icon]:w-[29px]! group-data-[collapsible=icon]:p-2!">
-              <Image src={`${asset}logo.png`} alt="" width={32} height={32} loading="eager" className="absolute top-1/2 left-2 -translate-y-1/2 opacity-0 transition-opacity duration-200 group-data-[collapsible=icon]:opacity-100" />
+              className="sidebar-brand relative h-12 rounded-lg hover:bg-brand-mark hover:text-sidebar-foreground active:bg-brand-mark">
+              <Image src={`${asset}logo-rail.png`} alt="" width={28} height={28} loading="eager" className="absolute top-1/2 left-1 -translate-y-1/2 opacity-0 transition-opacity duration-200 group-data-[collapsible=icon]:opacity-100" />
               <span className="flex min-w-[199px] flex-1 flex-col gap-0.5 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
                 <span className="flex h-[15px] items-center"><Image src={`${asset}wordmark.svg`} alt="HUMMUNICATION" width={102} height={10} /></span>
                 <span className="text-xs leading-[15px] tracking-[-0.96px] text-sidebar-foreground/70">27 커뮤팀</span>
@@ -59,13 +60,13 @@ export function AppSidebar({ active = "home", onHome, onCreate, onTeam }: {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton isActive={active === "home"} onClick={() => { navigate(onHome); setOpen(true); }} tooltip="홈" aria-label="홈"
-                className="rounded-lg font-bold group-data-[collapsible=icon]:w-[29px]!">
+                className="rounded-lg font-bold">
                 <NavigationIcon name="home" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">홈</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton isActive={active === "weekly"} onClick={() => { navigate(onCreate); setOpen(false); }} tooltip="카드뉴스 만들기" aria-label="카드뉴스 만들기"
-                className="rounded-lg font-bold group-data-[collapsible=icon]:w-[29px]!">
+              <SidebarMenuButton onClick={() => navigate(onCardNews)} tooltip="카드뉴스 만들기 · 준비 중" aria-label="카드뉴스 만들기"
+                className="rounded-lg font-bold">
                 <NavigationIcon name="card-news" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">카드뉴스 만들기</span>
               </SidebarMenuButton>
               <SidebarMenuBadge aria-hidden={collapsed} className="right-2 transition-opacity duration-200 group-data-[collapsible=icon]:block group-data-[collapsible=icon]:opacity-0">2</SidebarMenuBadge>
@@ -77,7 +78,7 @@ export function AppSidebar({ active = "home", onHome, onCreate, onTeam }: {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => navigate(onTeam)} tooltip="팀원" aria-label="팀원"
-                className="rounded-lg font-bold group-data-[collapsible=icon]:w-[29px]!">
+                className="rounded-lg font-bold">
                 <NavigationIcon name="team" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">팀원</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -85,7 +86,7 @@ export function AppSidebar({ active = "home", onHome, onCreate, onTeam }: {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex h-[51px] w-full items-center gap-2 overflow-hidden rounded-lg p-2 transition-[height] duration-200 group-data-[collapsible=icon]:h-[50px]">
+        <div className="sidebar-profile flex h-[51px] w-full items-center gap-2 overflow-hidden rounded-lg p-2">
           <Avatar className="size-8">
             <AvatarFallback className="bg-sidebar-accent text-base text-sidebar-accent-foreground">K</AvatarFallback>
           </Avatar>

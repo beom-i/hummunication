@@ -1,0 +1,66 @@
+.home-scene {
+  --sidebar-motion: 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-scene [data-slot="sidebar-gap"],
+.workspace-sidebar,
+.weekly-footer,
+.weekly-download-bar {
+  transition: width var(--sidebar-motion), left var(--sidebar-motion);
+}
+
+.workspace-sidebar { border-right-width: 0; }
+.workspace-sidebar [data-slot="sidebar-header"],
+.workspace-sidebar [data-slot="sidebar-footer"],
+.workspace-sidebar [data-slot="sidebar-group"],
+.workspace-sidebar .sidebar-profile {
+  transition: height var(--sidebar-motion), padding var(--sidebar-motion);
+}
+.workspace-sidebar [data-slot="sidebar-content"] {
+  transition: gap var(--sidebar-motion), padding var(--sidebar-motion);
+}
+.workspace-sidebar [data-slot="sidebar-menu"] { transition: gap var(--sidebar-motion); }
+.workspace-sidebar [data-slot="sidebar-menu-button"] {
+  transition: width var(--sidebar-motion), height var(--sidebar-motion), padding var(--sidebar-motion), background-color 150ms;
+}
+.workspace-sidebar [data-slot="sidebar-group-label"] {
+  overflow: hidden;
+  transition: height var(--sidebar-motion), opacity var(--sidebar-motion);
+}
+.workspace-sidebar [data-slot="avatar"] {
+  flex-shrink: 0;
+  transition: width var(--sidebar-motion), height var(--sidebar-motion), font-size var(--sidebar-motion);
+}
+
+[data-collapsible="icon"] .workspace-sidebar { --sidebar: var(--sidebar-rail); }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-header"] { padding: 20px 14px 32px; }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-content"] { gap: 24px; padding-top: 24px; }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-group"] { padding: 0 14px; }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-group-label"] { height: 0; }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-menu"] { gap: 24px; }
+/* Match shadcn's utility layer so its icon-size overrides can transition. */
+@layer utilities {
+  [data-collapsible="icon"] .workspace-sidebar .sidebar-brand {
+    width: 36px !important;
+    height: 28px !important;
+    padding: 0 !important;
+  }
+  [data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-content"] [data-slot="sidebar-menu-button"] {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 10px !important;
+    border-radius: 10px;
+  }
+}
+[data-collapsible="icon"] .workspace-sidebar [data-slot="sidebar-footer"] { padding: 20px 18px; }
+[data-collapsible="icon"] .workspace-sidebar .sidebar-profile { height: 28px; padding: 0; }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="avatar"] { width: 28px; height: 28px; }
+[data-collapsible="icon"] .workspace-sidebar [data-slot="avatar-fallback"] { font-size: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-scene [data-slot="sidebar-gap"],
+  .workspace-sidebar,
+  .workspace-sidebar *,
+  .weekly-footer,
+  .weekly-download-bar { transition: none !important; }
+}

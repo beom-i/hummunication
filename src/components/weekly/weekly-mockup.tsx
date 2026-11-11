@@ -92,7 +92,7 @@ export function WeeklyMockup() {
 
   return (
     <FormProvider {...methods}>
-      <main ref={main} className={`weekly-main min-w-0 flex-1 ${step > 1 ? "pb-[100px]" : ""}`} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "46px" : "256px" } as React.CSSProperties}>
+      <main ref={main} className={`weekly-main min-w-0 flex-1 ${step > 1 ? "pb-[100px]" : ""}`} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
       {step === 1 ? <PublishDate onNext={() => { methods.setValue("sermon.date", getValues("date")); navigate(2); }} onSave={saveDraft} /> : (
         <>
           <WeeklyHeading step={step} title={title} description={step === 2 && (view === "options" || view === "family-preview") ? "해당되지 않는 것은 제외해 주세요" : undefined} />
