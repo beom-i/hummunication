@@ -1,4 +1,10 @@
 import { storedZip } from "@/lib/stored-zip";
+import { getFontEmbedCSS, toCanvas } from "html-to-image";
+
+function canvasBytes(canvas: HTMLCanvasElement, format: "png" | "jpeg") {
+  const binary = atob(canvas.toDataURL(`image/${format}`, 0.95).split(",")[1]);
+  return Uint8Array.from(binary, character => character.charCodeAt(0));
+}
 
 async function rasterize(svg: SVGSVGElement, format: "png" | "jpeg") {
   const copy = svg.cloneNode(true) as SVGSVGElement;
@@ -35,17 +41,22 @@ async function rasterize(svg: SVGSVGElement, format: "png" | "jpeg") {
     canvas.height = 1500;
     canvas.getContext("2d")!.drawImage(image, 0, 0);
     // toBlob schedules idle work and stalls a multi-card export in background tabs.
-    const binary = atob(canvas.toDataURL(`image/${format}`, 0.95).split(",")[1]);
-    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return canvasBytes(canvas, format);
   } finally { URL.revokeObjectURL(url); }
 }
 
 export async function exportCards(ids: string[], format: "png" | "jpeg", zip: boolean) {
+  await document.fonts.ready;
+  const html = document.querySelector<HTMLElement>("[data-export-html]");
+  const fontEmbedCSS = html ? await getFontEmbedCSS(html, { preferredFontFormat: "woff2" }) : "";
   const files = [];
   for (const id of ids) {
-    const svg = document.querySelector<SVGSVGElement>(`[data-artifact-id="${id}"] svg`);
-    if (!svg) throw new Error("Preview unavailable");
-    files.push({ name: `${id}.${format === "jpeg" ? "jpg" : "png"}`, data: await rasterize(svg, format) });
+    const artifact = document.querySelector(`[data-artifact-id="${id}"]`);
+    const sheet = artifact?.querySelector<HTMLElement>("[data-export-html]");
+    const svg = artifact?.querySelector<SVGSVGElement>("svg");
+    if (!sheet && !svg) throw new Error("Preview unavailable");
+    const data = sheet ? canvasBytes(await toCanvas(sheet, { width: 480, height: 600, canvasWidth: 1200, canvasHeight: 1500, pixelRatio: 1, fontEmbedCSS, style: { transform: "none", position: "relative", left: "0", top: "0" } }), format) : await rasterize(svg!, format);
+    files.push({ name: `${id}.${format === "jpeg" ? "jpg" : "png"}`, data });
   }
   const data = zip ? storedZip(files) : files[0].data;
   const url = URL.createObjectURL(new Blob([new Uint8Array(data)], { type: zip ? "application/zip" : `image/${format}` }));

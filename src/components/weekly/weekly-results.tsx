@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BulletinCard, FamilyCard, SermonCard, familyPageCount } from "./preview-cards";
 import { exportCards } from "./export-cards";
 import type { WeeklyFormData } from "./schemas";
+import { useSermonPages } from "./sermon-pagination";
 
 type Artifact = { id: string; category: string; label: string; page: string; element: React.ReactNode };
 
@@ -17,16 +18,17 @@ export function WeeklyResults() {
   const { control } = useFormContext<WeeklyFormData>();
   const sections = useWatch({ control, name: "sections" });
   const groups = useWatch({ control, name: "groups" });
+  const { pages, ready } = useSermonPages();
   const artifacts = useMemo(() => {
     const artifacts: Artifact[] = [];
     if (sections.includes("thumbnail")) artifacts.push({ id: "bulletin-thumbnail", category: "주보 썸네일", label: "주보 썸네일", page: "11월 주보", element: <BulletinCard /> });
     if (sections.includes("cover")) artifacts.push({ id: "bulletin-cover", category: "주보 표지", label: "주보 표지", page: "11월 주보", element: <BulletinCard cover /> });
-    if (sections.includes("sermon")) for (let index = 0; index < 7; index++) artifacts.push({ id: `sermon-${index + 1}`, category: "설교 정리", label: "설교 정리", page: `${index + 1}페이지`, element: <SermonCard index={index} /> });
+    if (sections.includes("sermon")) for (let index = 0; index <= pages.length; index++) artifacts.push({ id: `sermon-${index + 1}`, category: "설교 정리", label: "설교 정리", page: `${index + 1}페이지`, element: <SermonCard index={index} /> });
     if (sections.includes("family")) groups.forEach((group, groupIndex) => {
       for (let index = 0; index < familyPageCount(group); index++) artifacts.push({ id: `family-${groupIndex + 1}-${index + 1}`, category: "새가족 문답", label: "새가족 문답", page: `${group.name} · ${index === 0 ? "표지" : index === 1 ? "썸네일" : `문답 ${index - 1}`}`, element: <FamilyCard index={index} groupIndex={groupIndex} /> });
     });
     return artifacts;
-  }, [sections, groups]);
+  }, [sections, groups, pages.length]);
   const [filter, setFilter] = useState("전체");
   const [excluded, setExcluded] = useState<string[]>([]);
   const [format, setFormat] = useState("png");
@@ -34,7 +36,7 @@ export function WeeklyResults() {
   const selected = artifacts.filter((artifact) => !excluded.includes(artifact.id));
   const categories = ["전체", ...new Set(artifacts.map((artifact) => artifact.category))];
   const download = async (all: boolean) => {
-    if (downloading) return;
+    if (downloading || (sections.includes("sermon") && !ready)) return;
     setDownloading(true);
     try {
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -49,7 +51,7 @@ export function WeeklyResults() {
       <span className="relative block size-[102px]" aria-hidden="true"><Image src="/images/weekly/9bdee.png" alt="" width={102} height={102} className="result-check-base" /><span className="result-check-fill absolute inset-0 overflow-hidden"><Image src="/images/weekly/9bdee.png" alt="" width={102} height={102} /></span></span>
       <h2 className="mt-4 text-[26px] font-bold tracking-[-2.08px] text-hero-foreground max-sm:text-xl">이번 주 결과물이 모두 준비됐어요</h2>
       <p className="mt-1 text-base tracking-[-0.48px] text-secondary-foreground">주보 · 설교 정리 · 새가족 문답, 총 {artifacts.length}장</p>
-      <Button loading={downloading} disabled={!artifacts.length} onClick={() => download(true)} className="mt-8 h-14 gap-1.5 rounded-2xl bg-home-brand px-7 text-base font-extrabold text-foreground hover:bg-home-brand/85">{!downloading && <Image src="/images/weekly/f4a70.svg" alt="" width={18} height={18} />}전부 ZIP으로 받기</Button>
+      <Button loading={downloading} disabled={!artifacts.length || (sections.includes("sermon") && !ready)} onClick={() => download(true)} className="mt-8 h-14 gap-1.5 rounded-2xl bg-home-brand px-7 text-base font-extrabold text-foreground hover:bg-home-brand/85">{!downloading && <Image src="/images/weekly/f4a70.svg" alt="" width={18} height={18} />}전부 ZIP으로 받기</Button>
     </div>
     {sections.includes("senders") && <p className="mt-4 text-sm text-muted-foreground">파송자 결과물은 입력 화면과 템플릿 연결 후 추가돼요.</p>}
     <div className="mt-10 flex flex-wrap gap-2" aria-label="결과물 종류">
@@ -66,7 +68,7 @@ export function WeeklyResults() {
     <div className="weekly-download-bar fixed bottom-[96px] left-1/2 z-30 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-3 rounded-full bg-primary py-2 pr-2 pl-7 text-primary-foreground shadow-xl max-sm:gap-2 max-sm:pl-4">
       <span className="min-w-[80px] shrink-0 text-sm font-semibold tabular-nums" aria-live="polite">{selected.length}장 선택됨</span><span className="h-4 w-px bg-primary-foreground/20" />
       <Select disabled={downloading} value={format} onValueChange={setFormat}><SelectTrigger aria-label="파일 형식" size="sm" className="w-[86px] border-0 bg-transparent text-primary-foreground shadow-none"><SelectValue /></SelectTrigger><SelectContent position="popper" side="top" align="start" className="weekly-popover min-w-[110px] rounded-xl p-1"><SelectItem value="png">PNG</SelectItem><SelectItem value="jpeg">JPG</SelectItem></SelectContent></Select>
-      <Button loading={downloading} disabled={!selected.length} onClick={() => download(false)} className="h-11 rounded-full bg-home-brand px-5 text-sm font-bold text-foreground hover:bg-home-brand/85">{!downloading && <Image src="/images/weekly/f4a70.svg" alt="" width={18} height={18} />}내려받기</Button>
+      <Button loading={downloading} disabled={!selected.length || (sections.includes("sermon") && !ready)} onClick={() => download(false)} className="h-11 rounded-full bg-home-brand px-5 text-sm font-bold text-foreground hover:bg-home-brand/85">{!downloading && <Image src="/images/weekly/f4a70.svg" alt="" width={18} height={18} />}내려받기</Button>
     </div>
   </section>;
 }

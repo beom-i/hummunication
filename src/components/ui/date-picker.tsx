@@ -25,11 +25,11 @@ export function DatePicker({ value, onValueChange, className, ...props }: DatePi
         <CalendarIcon className="size-[18px] shrink-0" aria-hidden="true" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent align="start" className="weekly-popover w-auto rounded-2xl p-0">
+    <PopoverContent align="start" className="weekly-popover w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] rounded-2xl p-0">
       <Calendar mode="single" required selected={selected} defaultMonth={selected} locale={ko} autoFocus onSelect={(date) => {
         onValueChange(format(date, "yyyy-MM-dd"));
         setOpen(false);
-      }} className="rounded-2xl [--cell-size:--spacing(10)]" />
+      }} className="w-full rounded-2xl [--cell-size:min(40px,calc((var(--radix-popover-trigger-width)_-_24px)/7))]" classNames={{ root: "w-full", month_grid: "w-full table-fixed" }} />
     </PopoverContent>
   </Popover>;
 }
