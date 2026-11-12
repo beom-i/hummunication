@@ -25,7 +25,7 @@ export function SermonCard({ index }: { index: number }) {
         <p className="sermon-cover-title" data-fit-text>{sermon.title}<br />({sermon.bible})</p>
       </div>
     </>}
-    <div className="sermon-sheet-footer"><TemplateAsset name="79109.svg" x={266} y={15} width={187.51} height={14.33} /></div>
+    <div className="sermon-sheet-footer"><TemplateAsset name={index > 0 ? "79109.svg" : "22e8a.svg"} x={266} y={15} width={187.51} height={14.33} /></div>
   </TemplateFrame>;
 }
 
