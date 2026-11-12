@@ -7,8 +7,9 @@ import { getSermon } from "./queries";
 export async function saveSermon(input: unknown) {
   const parsed = saveSermonSchema.safeParse(input);
   if (!parsed.success) return invalidInput(parsed.error);
+  const { ref, values } = parsed.data;
+  if (values.thumbnailEdit && !values.thumbnailId) return { ok: false as const, error: { code: "INVALID_INPUT" as const, message: "사진 업로드를 완료해 주세요", fields: { "values.thumbnailEdit": ["사진 업로드를 완료해 주세요"] } } };
   return withUser(async db => {
-    const { ref, values } = parsed.data;
     const { data, error } = await db.rpc("save_sermon", { p_id: ref?.id ?? undefined, p_values: { ...values, date: values.date || null } });
     if (error) return databaseFailure(error);
     revalidatePath("/bulletins");

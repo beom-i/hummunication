@@ -238,9 +238,13 @@
   --sermon-paper: #faf9f5;
   --sermon-red: #b92330;
   --sermon-title: #7e1d24;
-  --family-paper: #efebe5;
+  --family-paper: #efeae4;
   --family-brown: #4a2e0a;
-  --family-green: #5a8248;
+  --family-green: #5b7d41;
+  --family-names: #353535;
+  --art-black: #000;
+  --thumbnail-copy: #ebe5dd;
+  --thumbnail-red: #b4292f;
   --family-copy: #4a3a2a;
   --family-photo: #64616b;
   --family-skeleton: #dcd5ca;
@@ -316,5 +320,8 @@
   --sermon-red: #af282d;
   --sermon-title: #7e1d24;
   --sermon-paper: #fbfaf6;
+  --sermon-body-paper: #fffefb;
+  --sermon-copy: #302d23;
+  --sermon-cover-copy: #191716;
   --cover-paper: #e9e4da;
 }

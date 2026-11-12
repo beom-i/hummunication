@@ -3,6 +3,15 @@ import { uploadPhoto } from "@/features/files/actions";
 import type { Result } from "@/lib/result";
 import type { WeeklyFormData } from "./schemas";
 
+export function refreshRecoveredPhotos(recovery: WeeklyFormData, current: WeeklyFormData): WeeklyFormData {
+  const sources = new Map(current.families.filter(family => family.photo_id).map(family => [family.photo_id, family.photo]));
+  return {
+    ...recovery,
+    families: recovery.families.map(family => ({ ...family, photo: family.photo.startsWith("data:") ? family.photo : sources.get(family.photo_id) ?? family.photo })),
+    sermonThumbnail: !recovery.sermonThumbnail?.startsWith("data:") && recovery.sermon.thumbnailId && recovery.sermon.thumbnailId === current.sermon.thumbnailId ? current.sermonThumbnail : recovery.sermonThumbnail,
+  };
+}
+
 export function weeklyValuesForSave(values: WeeklyFormData): WeeklyFormData {
   return {
     ...values,

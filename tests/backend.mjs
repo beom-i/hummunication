@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 
 // This suite only targets the disposable local database, never the linked project.
@@ -152,3 +152,83 @@ assert.equal(JSON.parse(sql(`select public.get_family('${added[0].id}')`)).leade
 assert.throws(()=>sql(`select public.get_family('${added[0].id}')`,false), /Authentication required/);
 assert.throws(()=>sql(`insert into public.family(name) values('예시')`), /permission denied/);
 console.log('PASS: family IDs survive reordering; invalid sender rolls back family changes; removal is soft and permissions remain enforced');
+
+sql(readFileSync('supabase/migrations/20261113010000_photo_workflow.sql','utf8'),false);
+sql(readFileSync('supabase/migrations/20261113020000_family_template_photo_ratio.sql','utf8'),false);
+const photoActor = '00000000-0000-4000-8000-000000000001';
+function newPhoto(serial) {
+  const path = `${photoActor}/photos/00000000-0000-4000-8000-${String(serial).padStart(12,'0')}.png`;
+  sql(`insert into storage.objects(bucket_id,name,metadata) values('uploads','${path}','{"size":128,"mimetype":"image/png"}')`,false);
+  return sql(`select public.register_file('${path}')`);
+}
+const photo1=newPhoto(1),photo2=newPhoto(2);
+const familyEdit={...crop,quality:0.85};
+const sermonEdit={rotation:90,sourceWidth:900,sourceHeight:1600,crop:{x:0,y:0,width:1,height:1},quality:0.65};
+const photoWeekly=sql(`select public.save_weekly(p_date=>'2035-08-05',p_sections=>array['sermon','family'],p_sermon=>${json({values:{...sermon,thumbnailId:photo1,thumbnailEdit:sermonEdit}})},p_families=>${json([{...families[0],photo_id:photo1,photo_edit:familyEdit}])})`);
+const photoRecord=()=>JSON.parse(sql(`select public.get_weekly('2035-08-05')`));
+assert.deepEqual(photoRecord().sermon.thumbnail_edit,sermonEdit);
+assert.deepEqual(photoRecord().families[0].photo_edit,familyEdit);
+const row=photoRecord();
+const savePhoto=(photoId,prayerPeople=[])=>sql(`select public.save_weekly(p_id=>'${photoWeekly}',p_date=>'2035-08-05',p_sections=>array['sermon','family'],p_sermon=>${json({id:row.sermon.id,values:{...sermon,thumbnailId:photoId,thumbnailEdit:sermonEdit}})},p_families=>${json([{...row.families[0],photo_id:photoId,photo_edit:familyEdit}])},p_senders=>${json(prayerPeople)})`);
+assert.throws(()=>savePhoto(photo2,[{...directSenders[0],generation:'bad'}]),/Invalid sender/);
+assert.equal(photoRecord().sermon.thumbnail_id,photo1);
+assert.equal(sql(`select deleted_at is null from public.files where id='${photo1}'`),'t');
+savePhoto(photo2);
+assert.equal(photoRecord().sermon.thumbnail_id,photo2);
+assert.equal(sql(`select deleted_at is not null from public.files where id='${photo1}'`,false),'t');
+assert.throws(()=>sql(`select public.save_sermon(null,${json({...sermon,thumbnailId:photo1})})`),/Photo is unavailable/);
+console.log('PASS: original photo edit settings survive save/read; failed replacement preserves old references; successful replacement retires old files');
+const familyValues={...families[0]}; delete familyValues.id;
+const sharedA=newPhoto(3),sharedB=newPhoto(4);
+const sharedFamily=sql(`select public.save_family(null,${json({...familyValues,photo_id:sharedA,photo_edit:familyEdit})})`);
+const sharedSermon=sql(`select public.save_sermon(null,${json({...sermon,thumbnailId:sharedA,thumbnailEdit:sermonEdit})})`);
+sql(`select public.save_family('${sharedFamily}',${json({...familyValues,photo_id:sharedB,photo_edit:familyEdit})})`);
+assert.equal(sql(`select deleted_at is null from public.files where id='${sharedA}'`),'t');
+sql(`select public.save_family('${sharedFamily}',${json({...familyValues,photo_id:sharedB,photo_edit:sermonEdit})})`);
+assert.deepEqual(JSON.parse(sql(`select public.get_family('${sharedFamily}')`)).photo_edit,sermonEdit);
+sql(`select public.delete_sermon('${sharedSermon}')`);
+assert.throws(()=>sql(`select public.delete_file('${sharedA}')`),/Still referenced/);
+console.log('PASS: photo used by another original, including soft-deleted content, remains protected');
+const swapA=newPhoto(5),swapB=newPhoto(6);
+const swapWeekly=sql(`select public.save_weekly(p_date=>'2035-09-02',p_sections=>array['family'],p_families=>${json([{...families[0],photo_id:swapA},{...families[0],photo_id:swapB}])})`);
+const swapping=JSON.parse(sql(`select public.get_weekly('2035-09-02')`));
+sql(`select public.save_weekly(p_id=>'${swapWeekly}',p_date=>'2035-09-02',p_sections=>array['family'],p_families=>${json(swapping.families.map((r,i)=>({...r,photo_id:i===0?swapB:swapA})))})`);
+assert.equal(sql(`select count(*) from public.files where id in('${swapA}','${swapB}') and deleted_at is null`),'2');
+assert.throws(()=>sql(`select public.save_sermon(null,${json({...sermon,thumbnailId:photo2,thumbnailEdit:familyEdit})})`),/Invalid sermon/);
+assert.throws(()=>sql(`select public.save_family(null,${json({...familyValues,photo_id:photo2,photo_edit:{...familyEdit,quality:0.1}})})`),/Invalid family/);
+console.log('PASS: swapping photos across rows does not prematurely retire them; each domain rejects wrong aspect/quality');
+const cleanup=()=>JSON.parse(sql(`set role service_role; select coalesce(json_agg(t),'[]'::json) from public.claim_photo_cleanup() t`,false));
+assert.ok(!cleanup().some(f=>f.id===photo1),'Replacement keeps a 24-hour grace period');
+sql(`update public.files set deleted_at=now()-interval '25 hours' where id='${photo1}'`,false);
+assert.ok(cleanup().some(f=>f.id===photo1));
+assert.throws(()=>sql(`select * from public.claim_photo_cleanup()`),/permission denied/);
+assert.throws(()=>sql(`select public.finish_photo_cleanup(array['${photo1}'::uuid])`),/permission denied/);
+sql(`set role service_role; select public.finish_photo_cleanup(array['${photo1}'::uuid])`,false);
+assert.ok(!cleanup().some(f=>f.id===photo1),'Completed cleanup must not fill the next batch again');
+const abandoned=newPhoto(7);
+sql(`update public.files set created_at=now()-interval '25 hours' where id='${abandoned}'`,false);
+assert.ok(cleanup().some(f=>f.id===abandoned),'Upload without a successful content save is reclaimed');
+const unregisteredPath=`${photoActor}/photos/00000000-0000-4000-8000-000000000008.png`;
+sql(`insert into storage.objects(bucket_id,name,metadata,created_at) values('uploads','${unregisteredPath}','{"size":128,"mimetype":"image/png"}',now()-interval '25 hours')`,false);
+assert.ok(cleanup().some(f=>f.path===unregisteredPath),'Failed file registration is reclaimed in the app-owned namespace');
+assert.equal(sql(`select deleted_at is null from public.files where id='${sharedA}'`),'t');
+console.log('PASS: cleanup is service-only, waits for grace, retains references and retries unacknowledged/abandoned uploads');
+
+// A pending content transaction must finish before cleanup can decide a file is unused.
+const concurrentPhoto=newPhoto(99);
+sql(`update public.files set created_at=now()-interval '25 hours' where id='${concurrentPhoto}'`,false);
+const writer=spawn('psql',['-X','-qAt','-v','ON_ERROR_STOP=1','--dbname',target]);
+let writerError='',writerOutput='';
+const ready=new Promise((resolve,reject)=>{
+  writer.stdout.on('data',bytes=>{writerOutput+=bytes;if(writerOutput.includes('photo-writer-ready'))resolve();});
+  writer.on('error',reject);
+  writer.on('close',()=>{if(!writerOutput.includes('photo-writer-ready'))reject(Error(writerError));});
+});
+const writerDone=new Promise(resolve=>{writer.stderr.on('data',bytes=>writerError+=bytes);writer.on('close',code=>resolve(code));});
+writer.stdin.end(`set statement_timeout='5s';begin;set role authenticated;set local request.jwt.claim.sub='00000000-0000-4000-8000-000000000001';select public.save_family(null,${json({...familyValues,photo_id:concurrentPhoto,photo_edit:null})});select 'photo-writer-ready';select pg_sleep(0.3);commit;`);
+await ready;
+// Synchronous cleanup waits on the advisory lock while the independent writer commits.
+assert.ok(!cleanup().some(file=>file.id===concurrentPhoto));
+assert.equal(await writerDone,0,writerError);
+assert.equal(sql(`select deleted_at is null from public.files where id='${concurrentPhoto}'`),'t');
+console.log('PASS: cleanup serializes with a concurrent photo attachment and preserves its committed reference');

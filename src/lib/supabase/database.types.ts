@@ -84,6 +84,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           path: string
+          purged_at: string | null
         }
         Insert: {
           created_at?: string
@@ -91,6 +92,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           path: string
+          purged_at?: string | null
         }
         Update: {
           created_at?: string
@@ -98,6 +100,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           path?: string
+          purged_at?: string | null
         }
         Relationships: []
       }
@@ -164,6 +167,7 @@ export type Database = {
           id: string
           speaker: string
           thumbnail_id: string | null
+          thumbnail_edit: Json | null
           title: string
           updated_at: string
           updated_by: string | null
@@ -177,6 +181,7 @@ export type Database = {
           id?: string
           speaker?: string
           thumbnail_id?: string | null
+          thumbnail_edit?: Json | null
           title?: string
           updated_at?: string
           updated_by?: string | null
@@ -190,6 +195,7 @@ export type Database = {
           id?: string
           speaker?: string
           thumbnail_id?: string | null
+          thumbnail_edit?: Json | null
           title?: string
           updated_at?: string
           updated_by?: string | null
@@ -250,6 +256,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_photo_cleanup: { Args: Record<PropertyKey, never>; Returns: { id: string; path: string }[] }
+      finish_photo_cleanup: { Args: { p_ids: string[] }; Returns: undefined }
       delete_family: { Args: { p_id: string }; Returns: undefined }
       delete_file: { Args: { p_id: string }; Returns: undefined }
       delete_sender: { Args: { p_id: string }; Returns: undefined }

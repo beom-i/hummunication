@@ -1,5 +1,7 @@
 "use client";
 
+import { CardPagesProvider } from "@/components/weekly/card-pages";
+
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -46,7 +48,7 @@ function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyR
     setUnlocking(false); reset(editPasswordDefaults);
     router.push(`/weekly?bulletin=${record.id}&step=2`);
   });
-  return <FormProvider {...methods}><SermonPagesProvider>
+  return <FormProvider {...methods}><SermonPagesProvider><CardPagesProvider>
     <main className="weekly-main min-w-0 flex-1 px-6 pt-16 pb-[100px] max-sm:px-4" style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
       <header className="mx-auto w-full max-w-[1200px]">
         <Button asChild variant="ghost" className="mb-6 -ml-3"><Link href="/home"><ArrowLeft className="size-4" />홈으로</Link></Button>
@@ -70,7 +72,7 @@ function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyR
         </form>
       </DialogContent>
     </Dialog>
-  </SermonPagesProvider></FormProvider>;
+  </CardPagesProvider></SermonPagesProvider></FormProvider>;
 }
 
 export function BulletinDetail() {

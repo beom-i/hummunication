@@ -11,7 +11,7 @@ import { weeklyRecordSchema, weeklyDraftSchema, type WeeklyRecord } from "./sche
 const storedSchema = z.object({
   id: z.uuid(), date: z.iso.date(), updated_at: z.string(),
   sections: weeklyDraftSchema.shape.sections,
-  sermon: sermonSchema.extend({ date: z.iso.date().nullable(), thumbnail_id: z.uuid().nullable() }).nullable(),
+  sermon: sermonSchema.extend({ date: z.iso.date().nullable(), thumbnail_id: z.uuid().nullable(), thumbnail_edit: sermonFormSchema.shape.thumbnailEdit }).nullable(),
   families: z.array(familyStoredSchema).max(20),
   senders: z.array(senderFormSchema.extend({ date: z.iso.date().nullable(), id: z.uuid() })).max(20),
 });
@@ -32,7 +32,7 @@ export async function getWeekly(input: unknown): Promise<Result<WeeklyRecord>> {
       ref: { id: row.id, sermon: row.sermon ? { id: row.sermon.id } : null },
       data: {
         date: row.date, sections: row.sections,
-        sermon: row.sermon ? { ...row.sermon, date: row.sermon.date ?? "", thumbnailId: row.sermon.thumbnail_id } : sermonFormSchema.parse(sermonDefaultValues),
+        sermon: row.sermon ? { ...row.sermon, date: row.sermon.date ?? "", thumbnailId: row.sermon.thumbnail_id, thumbnailEdit: row.sermon.thumbnail_edit } : sermonFormSchema.parse(sermonDefaultValues),
         sermonThumbnail: row.sermon?.thumbnail_id ? sources.data[row.sermon.thumbnail_id] : "",
         families: families.map(g => ({ ...g, photo: g.photo_id ? sources.data[g.photo_id] : "" })),
         senders: row.senders.map(person => ({ ...person, date: person.date ?? "" })) ?? [],

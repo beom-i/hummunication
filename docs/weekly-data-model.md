@@ -1,6 +1,6 @@
 # 주보 데이터 구조
 
-2026-11-12 · 현재 구현. 운영 반영 이력과 웹 배포 상태는 [적용 상태](backend-implementation-status.md)에서 확인한다.
+2026-11-13 · 현재 코드. 사진 편집·정리 migration은 운영 미반영이며 [적용 절차](photo-workflow.md)를 따른다. 운영 반영 이력과 웹 배포 상태는 [적용 상태](backend-implementation-status.md)에서 확인한다.
 
 ```text
 weekly
@@ -47,7 +47,8 @@ weekly / sermon / family / sender는 id(uuid PK), created_at, updated_at, update
 | title | text NOT NULL DEFAULT '' | 설교 제목, 최대 200자 |
 | bible | text NOT NULL DEFAULT '' | 성경 구절, 최대 200자 |
 | content | jsonb NOT NULL | 허용된 Tiptap 문서 |
-| thumbnail_id | uuid nullable FK files.id | 설교 표지의 업로드 사진 |
+| thumbnail_id | uuid nullable FK files.id | 설교 표지의 원본 사진 |
+| thumbnail_edit | jsonb nullable | 16:9 크롭·회전·원본 크기·출력 품질 |
 
 content는 bold / italic / underline / strike / textStyle(HEX 색·8~32px)을 보존한다. 본문은 최대 20,000자/2,000문단이다. Enter와 빈 문단을 보존하고 카드 페이지는 생성한다.
 
@@ -60,13 +61,13 @@ content는 bold / italic / underline / strike / textStyle(HEX 색·8~32px)을 �
 | weekly_id | uuid nullable FK weekly.id | 연결된 주보 |
 | name | text NOT NULL DEFAULT '', 최대 100자 | 순 이름 |
 | photo_id | uuid nullable FK files.id | 단체 사진 원본 |
-| photo_edit | jsonb nullable | 원본 크기·회전·크롭 영역 |
+| photo_edit | jsonb nullable | 원본 크기·회전·크롭 영역·출력 품질 |
 | leader_name | text NOT NULL DEFAULT '', 최대 100자 | 순장 이름 |
 | leader_answer | text NOT NULL DEFAULT '', 최대 3,000자 | 순장 답변 |
 | members | jsonb NOT NULL DEFAULT '[]' | 순원별 name·answer 배열, 최대 30명 |
 | position | integer NOT NULL, 0~19 | 주보 안에서 표시 순서 |
 
-weekly 1:N family이며 활성 (weekly_id, position)은 UNIQUE다. 사진은 SQL FK와 활성 파일 검증으로 보호한다. 크롭은 119:71 비율, 0/90/180/270도 회전과 회전된 원본 기준 0~1 영역을 저장한다. 미연결 원본은 weekly_id=NULL로 보존한다.
+weekly 1:N family이며 활성 (weekly_id, position)은 UNIQUE다. 사진은 SQL FK와 활성 파일 검증으로 보호한다. 새 편집은 최종 사진틀의 16:9 비율, 기존 119:71 값도 호환하며 0/90/180/270도 회전과 회전된 원본 기준 0~1 영역을 저장한다. 미연결 원본은 weekly_id=NULL로 보존한다.
 
 프론트·서버·DB 모두 families 배열의 photo_id / photo_edit / leader_name / leader_answer / members와 senders 배열의 group_name을 사용한다. photo는 화면 표시용 URL 또는 업로드 전 Data URL이며 DB에 저장하지 않는다. position은 배열 순서에서 DB가 정한다. 기존 groups·leader·photoId·photoEdit 브라우저 원본은 읽을 때 변환한다.
 
@@ -93,9 +94,9 @@ weekly 1:N family이며 활성 (weekly_id, position)은 UNIQUE다. 사진은 SQL
 
 ## files — 업로드 원본
 
-id(uuid PK), path(text UNIQUE NOT NULL), created_by(nullable Auth FK), created_at(timestamptz), deleted_at(nullable)을 갖는다. 이미지 자체는 기존 private uploads 버킷에 둔다. Data URL·서명 URL은 영구 저장하지 않고 files.id로 연결한다.
+id(uuid PK), path(text UNIQUE NOT NULL), created_by(nullable Auth FK), created_at(timestamptz), deleted_at(nullable)을 갖는다. 이미지 자체는 기존 private uploads 버킷에 둔다. Data URL·서명 URL은 영구 저장하지 않고 files.id로 연결한다. purged_at(nullable)은 실파일 정리 완료 시각이다.
 
-PNG/JPG/WebP, 최대 5MiB. 파일 형식을 서버에서 다시 검사한다. 서명 URL은 1시간 유효하다. 등록된 원본의 덮어쓰기·물리 삭제는 막고, 삭제된 설교·문답의 참조도 보존한다.
+PNG/JPG/WebP, 최대 5MiB. 파일 형식을 서버에서 다시 검사한다. 서명 URL은 1시간 유효하다. 클라이언트의 원본 덮어쓰기·물리 삭제는 막고, 삭제된 설교·문답의 참조도 보존한다. 교체로 참조가 없어진 파일은 주보 저장 성공 시 삭제 대기로 기록하고 최소 24시간 후 서버가 Storage API로 정리한다.
 
 ## 저장·권한·삭제
 
@@ -108,3 +109,7 @@ PNG/JPG/WebP, 최대 5MiB. 파일 형식을 서버에서 다시 검사한다. �
 - 오류는 공통 Result<T>와 fields 경로로 반환하며 RHF FieldError·root·toast로 표시한다. 저장 실패 시 입력을 유지한다.
 
 기존에 적용한 migration은 보존하고, 변경은 새 migration으로만 적용한다. 카드 장수·HTML·PNG/JPG·ZIP과 다운로드 선택은 원본에서 생성하므로 별도 DB 테이블이 필요 없다.
+
+## 공통 사진 편집
+
+원본 파일은 편집·품질 변경으로 교체하지 않는다. rotation / sourceWidth / sourceHeight / crop / quality를 두 도메인이 공유한다. quality는 null / 0.85 / 0.65이며 기존 값이 없으면 null로 처리한다. 미리보기·내려받기는 같은 설정을 적용하고, 사진 교체·삭제 때만 파일 연결을 바꾼다. [상세 동작·운영 설정](photo-workflow.md).

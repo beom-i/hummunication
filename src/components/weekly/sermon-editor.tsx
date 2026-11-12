@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { Trash2, ArrowLeftRight } from "lucide-react";
 import { Controller, useFormContext } from "react-hook-form";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -14,24 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SermonPreviewSkeleton } from "./weekly-skeleton";
 import { SermonCard } from "./preview-cards";
+import { PhotoField } from "./photo-field";
 import { useSermonPages } from "./sermon-pagination";
-import { photoSchema, type WeeklyFormData } from "./schemas";
+import { type WeeklyFormData } from "./schemas";
 
 function SermonFields() {
   const { control, register, watch, setValue, setError, clearErrors, formState: { errors } } = useFormContext<WeeklyFormData>();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const thumbnail = watch("sermonThumbnail");
-  const upload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const result = photoSchema.safeParse(file);
-    event.target.value = "";
-    if (!result.success) { setError("sermonThumbnail", { message: result.error.issues[0].message }); return; }
-    const reader = new FileReader();
-    reader.onload = () => { setValue("sermonThumbnail", String(reader.result), { shouldDirty: true }); setValue("sermon.thumbnailId", null); clearErrors("sermonThumbnail"); };
-    reader.onerror = () => setError("sermonThumbnail", { message: "사진을 다시 올려 주세요" });
-    reader.readAsDataURL(file);
-  };
+  const thumbnailId = watch("sermon.thumbnailId");
+  const thumbnailEdit = watch("sermon.thumbnailEdit");
   return <div className="flex w-full flex-col gap-5">
     <Field data-invalid={!!errors.sermon?.date} className="gap-2">
       <FieldLabel htmlFor="sermon-date" className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">설교 날짜</FieldLabel>
@@ -45,9 +34,13 @@ function SermonFields() {
     </Field>)}
     <Field className="gap-2" data-invalid={!!errors.sermonThumbnail}>
       <FieldLabel htmlFor="sermon-thumbnail" className="text-sm font-semibold text-secondary-foreground">썸네일</FieldLabel>
-      <input ref={fileInput} id="sermon-thumbnail" type="file" accept="image/png,image/jpeg,image/webp" onChange={upload} className="sr-only" />
-      {thumbnail ? <div className="relative aspect-video overflow-hidden rounded-xl bg-muted"><Image src={thumbnail} alt="설교 썸네일" fill unoptimized className="object-cover" /><div className="absolute top-3 right-3 flex gap-1.5"><Button variant="secondary" size="sm" className="rounded-full bg-card" onClick={() => fileInput.current?.click()}><ArrowLeftRight className="size-3" />바꾸기</Button><Button variant="secondary" size="icon-sm" aria-label="설교 썸네일 삭제" className="rounded-full bg-card" onClick={() => { setValue("sermonThumbnail", "", { shouldDirty: true }); setValue("sermon.thumbnailId", null); }}><Trash2 className="size-3.5" /></Button></div></div> : <label htmlFor="sermon-thumbnail" className="flex h-[213px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-muted"><span className="flex size-11 items-center justify-center rounded-full bg-card"><Image src="/images/weekly/a02dc.png" alt="" width={35} height={35} /></span><span className="text-base font-semibold text-secondary-foreground">사진 올리기</span></label>}
-      <FieldError errors={[errors.sermonThumbnail]} />
+      <Controller control={control} name="sermonThumbnail" render={({ field }) => <PhotoField id="sermon-thumbnail" label="설교 썸네일" aspect={16 / 9} value={{ source: field.value ?? "", fileId: thumbnailId ?? null, edit: thumbnailEdit ?? null }} onBlur={field.onBlur} inputRef={field.ref} onError={message => setError("sermonThumbnail", { message })} onChange={photo => {
+        field.onChange(photo.source);
+        setValue("sermon.thumbnailId", photo.fileId, { shouldDirty: true });
+        setValue("sermon.thumbnailEdit", photo.edit, { shouldDirty: true });
+        clearErrors(["sermonThumbnail", "sermon.thumbnailEdit"]);
+      }} />} />
+      <FieldError errors={[errors.sermonThumbnail, errors.sermon?.thumbnailEdit]} />
     </Field>
   </div>;
 }
@@ -58,9 +51,10 @@ export function SermonEditor({ preview }: { preview: boolean }) {
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [previewFont, setPreviewFont] = useState("");
+  const [previewCardFont, setPreviewCardFont] = useState("");
   const current = Math.min(page, pages.length);
   const expandedIndex = expanded === null ? null : Math.min(expanded, pages.length);
-  const openCard = (index: number, children: React.ReactNode) => <button type="button" aria-label={`설교 ${index === 0 ? "표지" : `본문 ${index}페이지`} 크게 보기`} onClick={event => { setPreviewFont(getComputedStyle(event.currentTarget).getPropertyValue("--font-home-body")); setExpanded(index); }} className="block w-full rounded-[14px] text-left outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">{children}</button>;
+  const openCard = (index: number, children: React.ReactNode) => <button type="button" aria-label={`설교 ${index === 0 ? "표지" : `본문 ${index}페이지`} 크게 보기`} onClick={event => { const style = getComputedStyle(event.currentTarget); setPreviewFont(style.getPropertyValue("--font-home-body")); setPreviewCardFont(style.getPropertyValue("--font-card-body")); setExpanded(index); }} className="block w-full rounded-[14px] text-left outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">{children}</button>;
 
   return <div className="weekly-sermon-layout mt-[60px] flex items-start gap-8">
     <div className="w-[380px] shrink-0">
@@ -99,7 +93,7 @@ export function SermonEditor({ preview }: { preview: boolean }) {
       </>}
     </section>
     <Dialog open={expandedIndex !== null} onOpenChange={open => { if (!open) setExpanded(null); }}>
-      <DialogContent style={{ "--font-home-body": previewFont } as React.CSSProperties} className="weekly-popover max-h-[95svh] overflow-y-auto sm:max-w-[620px]">
+      <DialogContent style={{ "--font-home-body": previewFont, "--font-card-body": previewCardFont } as React.CSSProperties} className="weekly-popover max-h-[95svh] overflow-y-auto sm:max-w-[620px]">
         <DialogHeader><DialogTitle>{expandedIndex === 0 ? "설교 표지" : `설교 본문 ${expandedIndex}페이지`}</DialogTitle><DialogDescription>입력한 내용이 실시간으로 반영된 미리보기예요.</DialogDescription></DialogHeader>
         {expandedIndex !== null && <div className="mx-auto w-full max-w-[min(480px,calc(65svh*0.8))]"><SermonCard index={expandedIndex} /></div>}
         {preview && expandedIndex !== null && <div className="flex items-center justify-between"><Button variant="outline" disabled={expandedIndex === 0} onClick={() => setExpanded(expandedIndex - 1)}>이전</Button><span className="text-sm">{expandedIndex + 1}/{pages.length + 1}</span><Button variant="outline" disabled={expandedIndex >= pages.length} onClick={() => setExpanded(expandedIndex + 1)}>다음</Button></div>}

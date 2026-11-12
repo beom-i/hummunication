@@ -42,7 +42,7 @@ function WorkspaceContent({ children }: { children: React.ReactNode }) {
   return <StartWeeklyContext.Provider value={startWeekly}>
     <div className="home-scene flex min-h-svh w-full" data-view={weekly ? "weekly" : "home"} data-entering={entering}>
       <div className="contents" inert={entering || weeklyIntroStartedAt !== null}>
-        <AppSidebar active={weekly ? "weekly" : "home"} onHome={() => router.push("/home")} onCardNews={weekly ? () => router.push("/weekly?step=1") : startWeekly} onTeam={showComingSoon} />
+        <AppSidebar active={weekly ? "weekly" : "home"} onHome={() => router.push("/home")} onCardNews={showComingSoon} onTeam={showComingSoon} />
         <SidebarTrigger aria-label="메뉴 열기" className="fixed top-4 left-4 z-20 bg-background md:hidden" />
         {children}
       </div>

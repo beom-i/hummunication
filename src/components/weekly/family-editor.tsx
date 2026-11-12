@@ -1,17 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ImagePlus, Trash2 } from "lucide-react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentEntryList } from "./content-entry-list";
-import { FamilyCard, familyPageCount } from "./preview-cards";
-import { newFamily, photoSchema, type WeeklyFormData } from "./schemas";
-import { CroppedPhoto, PhotoCropDialog } from "./photo-crop";
+import { FamilyCard } from "./preview-cards";
+import { newFamily, type WeeklyFormData } from "./schemas";
+import { useCardPages } from "./card-pages";
+import { PhotoField } from "./photo-field";
 
 export function FamilyList({ onEdit }: { onEdit: (index: number) => void }) {
   const { control, formState: { errors } } = useFormContext<WeeklyFormData>();
@@ -21,24 +22,11 @@ export function FamilyList({ onEdit }: { onEdit: (index: number) => void }) {
 }
 
 export function FamilyEditor({ index }: { index: number }) {
-  const [cropping, setCropping] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
   const { register, control, setValue, setError, clearErrors, formState: { errors } } = useFormContext<WeeklyFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: `families.${index}.members` });
   const group = useWatch({ control, name: `families.${index}` });
   const groupErrors = errors.families?.[index];
-  const photoInput = register(`families.${index}.photo`);
-  const uploadPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const result = photoSchema.safeParse(file);
-    if (!result.success) { setError(`families.${index}.photo`, { message: result.error.issues[0].message }); return; }
-    const reader = new FileReader();
-    reader.onload = () => { setValue(`families.${index}.photo`, String(reader.result), { shouldDirty: true }); setValue(`families.${index}.photo_id`, null, { shouldDirty: true }); setValue(`families.${index}.photo_edit`, null, { shouldDirty: true }); clearErrors(`families.${index}.photo`); };
-    reader.onerror = () => setError(`families.${index}.photo`, { message: "사진을 다시 올려 주세요" });
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
+
   return <section className="family-form mx-auto mt-[60px] flex w-full max-w-[560px] flex-col gap-4 max-sm:px-5" aria-label="새가족 순 편집">
     <div className="family-form-card flex flex-col gap-6">
     <Field className="gap-3">
@@ -48,12 +36,13 @@ export function FamilyEditor({ index }: { index: number }) {
     </Field>
     <Field className="gap-3 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring">
       <FieldLabel htmlFor="family-photo" className="text-lg font-bold">단체 사진</FieldLabel>
-      <input type="hidden" {...photoInput} />
-      {group.photo ? <button type="button" aria-label="단체 사진 크롭 편집" onClick={() => setCropping(true)} className="relative h-[213px] w-full overflow-hidden rounded-2xl border bg-muted outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"><CroppedPhoto source={group.photo} edit={group.photo_edit} label="업로드한 단체 사진" className="absolute inset-0 size-full" /></button> : <label htmlFor="family-photo" className="relative flex h-[256px] cursor-pointer flex-col items-center justify-center gap-2.5 overflow-hidden rounded-2xl border bg-muted"><span className="flex size-11 items-center justify-center rounded-full bg-card"><Image src="/images/weekly/a02dc.png" alt="" width={35} height={35} /></span><span className="text-base font-semibold text-secondary-foreground">사진 올리기</span></label>}
-      <input ref={fileInput} id="family-photo" type="file" accept="image/png,image/jpeg,image/webp" aria-label="단체 사진 올리기" onChange={uploadPhoto} className="sr-only w-px!" />
-      {group.photo && <div className="grid grid-cols-2 gap-3"><Button type="button" variant="outline" className="h-10 gap-2 rounded-xl font-semibold" onClick={() => fileInput.current?.click()}><ImagePlus className="size-4" />사진 교체</Button><Button type="button" variant="destructive" className="h-10 gap-2 rounded-xl font-semibold" onClick={() => { setValue(`families.${index}.photo`, "", { shouldDirty: true }); setValue(`families.${index}.photo_id`, null, { shouldDirty: true }); setValue(`families.${index}.photo_edit`, null, { shouldDirty: true }); }}><Trash2 className="size-4" />사진 삭제</Button></div>}
-      <FieldError errors={[groupErrors?.photo]} />
-      {cropping && group.photo && <PhotoCropDialog source={group.photo} edit={group.photo_edit} onApply={edit => setValue(`families.${index}.photo_edit`, edit, { shouldDirty: true })} onClose={() => setCropping(false)} />}
+      <Controller control={control} name={`families.${index}.photo`} render={({ field }) => <PhotoField id="family-photo" label="단체 사진" aspect={16 / 9} value={{ source: field.value, fileId: group.photo_id, edit: group.photo_edit }} onBlur={field.onBlur} inputRef={field.ref} onError={message => setError(`families.${index}.photo`, { message })} onChange={photo => {
+        field.onChange(photo.source);
+        setValue(`families.${index}.photo_id`, photo.fileId, { shouldDirty: true });
+        setValue(`families.${index}.photo_edit`, photo.edit, { shouldDirty: true });
+        clearErrors([`families.${index}.photo`, `families.${index}.photo_edit`]);
+      }} />} />
+      <FieldError errors={[groupErrors?.photo, groupErrors?.photo_edit]} />
     </Field>
     <Divider>순장 답변</Divider>
     <div className="rounded-2xl bg-card p-[14px]">
@@ -77,6 +66,7 @@ function Divider({ children }: { children: React.ReactNode }) {
 }
 
 export function FamilyPreview({ onEdit }: { onEdit: (index: number, page?: number) => void }) {
+  const cardPages = useCardPages();
   const { control } = useFormContext<WeeklyFormData>();
   const families = useWatch({ control, name: "families" });
   return <div className="weekly-centered mx-auto mt-[60px] w-full max-w-[1200px] space-y-8 px-0 max-xl:px-6">
@@ -87,9 +77,9 @@ export function FamilyPreview({ onEdit }: { onEdit: (index: number, page?: numbe
         <Button variant="secondary" size="sm" onClick={() => onEdit(groupIndex)} className="ml-auto text-[13px]">입력 내용 수정</Button>
       </div>
       <div className="rounded-3xl bg-card p-6 pr-0">
-        <div className="mb-4 flex items-center justify-between gap-3 pr-6"><h2 className="text-lg font-bold">카드뉴스 {familyPageCount(group)}장</h2><p className="text-[13px] text-secondary-foreground">옆으로 넘겨서 확인해요 →</p></div>
+        <div className="mb-4 flex items-center justify-between gap-3 pr-6"><h2 className="text-lg font-bold">카드뉴스 {2 + (cardPages.families[groupIndex]?.length ?? 1)}장</h2><p className="text-[13px] text-secondary-foreground">옆으로 넘겨서 확인해요 →</p></div>
         <div className="flex snap-x gap-6 overflow-x-auto pt-1 pr-6 pb-3 pl-1">
-          {Array.from({ length: familyPageCount(group) }, (_, index) => <figure key={index} className="relative w-[300px] shrink-0 snap-start"><FamilyCard index={index} groupIndex={groupIndex} /><Button variant="secondary" size="sm" className="absolute right-3 bottom-12 rounded-full bg-card shadow-sm" onClick={() => onEdit(groupIndex, index)}>편집</Button><figcaption className="mt-3 flex items-center justify-between text-sm font-bold">{index === 0 ? "표지" : index === 1 ? `${group.name} 썸네일` : `${index} 문답`}<Button variant="secondary" size="sm" onClick={() => onEdit(groupIndex)}>수정</Button></figcaption></figure>)}
+          {Array.from({ length: 2 + (cardPages.families[groupIndex]?.length ?? 1) }, (_, index) => <figure key={index} className="relative w-[300px] shrink-0 snap-start"><FamilyCard index={index} groupIndex={groupIndex} /><Button variant="secondary" size="sm" className="absolute right-3 bottom-12 rounded-full bg-card shadow-sm" onClick={() => onEdit(groupIndex, index)}>편집</Button><figcaption className="mt-3 flex items-center justify-between text-sm font-bold">{index === 0 ? "표지" : index === 1 ? `${group.name} 썸네일` : `${index} 문답`}<Button variant="secondary" size="sm" onClick={() => onEdit(groupIndex)}>수정</Button></figcaption></figure>)}
         </div>
       </div>
     </section>)}
@@ -97,10 +87,9 @@ export function FamilyPreview({ onEdit }: { onEdit: (index: number, page?: numbe
 }
 
 export function FamilyCardEditor({ index, initialPage = 0 }: { index: number; initialPage?: number }) {
-  const { control } = useFormContext<WeeklyFormData>();
-  const group = useWatch({ control, name: `families.${index}` });
   const [page, setPage] = useState(initialPage);
-  const count = familyPageCount(group);
+  const cardPages = useCardPages();
+  const count = 2 + (cardPages.families[index]?.length ?? 1);
   const current = Math.min(page, count - 1);
   return <div className="weekly-centered family-detail-layout mx-auto mt-[60px] w-full max-w-[1112px]">
     <section className="rounded-2xl border bg-card p-5" aria-label="새가족 카드뉴스 미리보기"><h2 className="mb-4 text-base font-bold">카드뉴스 미리보기</h2><div className="relative px-14"><Button variant="outline" size="icon-lg" className="preview-nav left-0 rounded-full" aria-label="이전 새가족 카드" disabled={current === 0} onClick={() => setPage(current - 1)}><ChevronLeft /></Button><div key={current} className="weekly-enter"><FamilyCard index={current} groupIndex={index} /></div><Button variant="outline" size="icon-lg" className="preview-nav right-0 rounded-full" aria-label="다음 새가족 카드" disabled={current + 1 >= count} onClick={() => setPage(current + 1)}><ChevronRight /></Button></div></section>

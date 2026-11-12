@@ -24,6 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:validation
       - run: pnpm test:weekly
+      - run: pnpm test:photos
       - run: pnpm test:content
       - run: node tests/reports.mjs
       - run: pnpm build

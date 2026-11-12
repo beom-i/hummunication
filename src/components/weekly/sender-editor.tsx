@@ -8,21 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ContentEntryList } from "./content-entry-list";
 import { newSender, type WeeklyFormData } from "./schemas";
-import { senderPrayerPages } from "./sender-pagination";
+import { CardTextRows, useCardPages } from "./card-pages";
+import { TemplateAsset, TemplateFrame } from "./template-frame";
 
 export function SenderCard({ index, page = 0 }: { index: number; page?: number }) {
   const { control } = useFormContext<WeeklyFormData>();
   const sender = useWatch({ control, name: `senders.${index}` });
-  const prayers = senderPrayerPages(sender?.prayer ?? "")[page] ?? [];
-  return <div className="news-card sender-card"><svg viewBox="0 0 360 450" role="img" aria-label="파송자 카드뉴스">
-    <rect width="360" height="450" fill="var(--sender-paper)" />
-    <image href="/images/templates/7ceca.svg" x="-4" y="298" width="368.595" height="145" />
-    <text x="180" y="60" textAnchor="middle" fill="var(--sender-foreground)" fontFamily="serif" fontSize="30">( 파송자 )</text>
-    <path d="M0 75.5H360" stroke="var(--sender-foreground)" strokeWidth="0.5" opacity="0.5" />
-    <text x="180" y="102" textAnchor="middle" fill="var(--sender-foreground)" fontSize="14" fontWeight="600">{sender?.generation && `${sender.generation}기 `}{sender?.name || "이름"}</text>
-    {prayers.map((line, i) => <g key={i} transform={`translate(22 ${130 + i * 17.6})`}>{(i === 0 || prayers[i - 1].number !== line.number) && <text y="10" fill="var(--sender-foreground)" fontSize="12" fontWeight="700">{line.number}</text>}<text x="42" y="10" fill="var(--sender-foreground)" fontSize="11">{line.text}</text></g>)}
-    <text x="180" y="438" textAnchor="middle" fill="var(--sender-foreground)" fontSize="12.5" opacity="0.7">Goodbye, HUB Family</text>
-  </svg></div>;
+  const { senders } = useCardPages();
+  return <TemplateFrame label="파송자 카드뉴스" className="sender-card">
+    <TemplateAsset name="sender-art.png" x={0} y={0} width={720} height={900} />
+    <p className="sender-card-name" data-fit-width data-fit-text>{sender?.generation && `${sender.generation}기 `}{sender?.name || "이름"}</p>
+    <div className="sender-card-prayers"><CardTextRows rows={senders[index]?.[page] ?? []} /></div>
+  </TemplateFrame>;
 }
 
 export function SenderList({ onEdit }: { onEdit: (index: number) => void }) {

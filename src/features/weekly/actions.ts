@@ -13,7 +13,8 @@ export async function saveWeekly(input: unknown): Promise<Result<WeeklyRecord>> 
   if (!parsed.success) return invalidInput(parsed.error);
   const { ref, values } = parsed.data;
   if (values.sermonThumbnail && !values.sermon.thumbnailId) return { ok: false, error: { code: "INVALID_INPUT", message: "썸네일 업로드를 완료해 주세요", fields: { "values.sermonThumbnail": ["썸네일 업로드를 완료해 주세요"] } } };
-  const missing = values.families.findIndex(g => g.photo && !g.photo_id);
+  if (values.sermon.thumbnailEdit && !values.sermon.thumbnailId) return { ok: false, error: { code: "INVALID_INPUT", message: "사진 업로드를 완료해 주세요", fields: { "values.sermon.thumbnailEdit": ["사진 업로드를 완료해 주세요"] } } };
+  const missing = values.families.findIndex(g => (g.photo || g.photo_edit) && !g.photo_id);
   if (missing !== -1) return { ok: false, error: { code: "INVALID_INPUT", message: "사진 업로드를 완료해 주세요", fields: { [`values.families.${missing}.photo`]: ["사진 업로드를 완료해 주세요"] } } };
   return withUser(async db => {
     const { error } = await db.rpc("save_weekly", {

@@ -1,10 +1,12 @@
 "use client";
 
+import { CardPagesProvider } from "@/components/weekly/card-pages";
+
 import Link from "next/link";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { loadWeekly, saveWeekly } from "@/features/weekly/actions";
-import { prepareWeeklyPhotos, weeklyValuesForSave } from "@/features/weekly/client";
+import { prepareWeeklyPhotos, weeklyValuesForSave, refreshRecoveredPhotos } from "@/features/weekly/client";
 import { setFormErrors } from "@/lib/form-errors";
 import { invalidInput } from "@/lib/result";
 import { legacyWeeklySchema } from "@/components/bulletins/schemas";
@@ -79,7 +81,7 @@ export function WeeklyMockup() {
           if (result.ok) {
             const recovery = loadPendingWeekly(editingId);
             stored.current = recovery ? recovery.ref ? { ...result.data, ref: recovery.ref } : null : result.data;
-            reset(recovery?.data ?? result.data.data);
+            reset(recovery ? refreshRecoveredPhotos(recovery.data, result.data.data) : result.data.data);
           }
           else {
             const recovery = loadPendingWeekly(editingId);
@@ -183,7 +185,7 @@ export function WeeklyMockup() {
     if (group !== undefined) params.set("group", String(group));
     if (card !== undefined) params.set("card", String(card));
     const href = `/weekly?${params}`;
-    if (navigating.current || href === window.location.pathname + window.location.search) return;
+    if (pending || navigating.current || href === window.location.pathname + window.location.search) return;
     void transitionTo(nextStep, nextView ?? "options", () => window.history.pushState(null, "", href));
   };
   const finishIntro = useCallback(() => window.history.replaceState(null, "", "/weekly?step=1"), []);
@@ -282,8 +284,8 @@ export function WeeklyMockup() {
 
   return (
     <FormProvider {...methods}>
-      <SermonPagesProvider>
-      <main ref={main} className="weekly-main weekly-workspace min-w-0 flex-1 pb-[100px]" data-progress-open={progressOpen} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
+      <SermonPagesProvider><CardPagesProvider>
+      <main ref={main} inert={pending} aria-busy={pending} className="weekly-main weekly-workspace min-w-0 flex-1 pb-[100px]" data-progress-open={progressOpen} style={{ "--weekly-sidebar-offset": isMobile ? "0px" : state === "collapsed" ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" } as React.CSSProperties}>
       <ProgressSidebar step={step} view={view} open={progressOpen} onToggle={() => setProgressOpen(value => !value)} onNavigate={navigate} loading={loading} />
       <WeeklyHeading step={view === "options" && step === 2 ? 1 : step} title={title} contentKey={transitionKey} description={step === 1 ? editingId ? "저장된 주보의 발행일이에요" : "발행일(주일) 기준으로 주차가 자동 계산돼요" : undefined} />
       <div className="weekly-content-frame" data-loading={loading} aria-busy={loadingTarget !== null}>
@@ -302,7 +304,7 @@ export function WeeklyMockup() {
       </div>
       {editingEntry ? <div className="weekly-edit-bar"><span className="flex flex-1 items-center gap-2 text-sm text-primary-foreground/70"><Check className="size-4" />{savedAt ? `자동 저장됨 ${savedAt}` : "입력한 내용을 자동으로 저장해요"}</span><Button onClick={next} disabled={pending} className="h-11 rounded-full bg-home-brand px-6 font-bold text-foreground hover:bg-home-brand/85">완료하기</Button></div> : <WeeklyFooter nextDisabled={step === 2 && view === "options" && !sections.length} onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={step === 3 ? "저장" : "다음"} />}
       </main>
-      </SermonPagesProvider>
+      </CardPagesProvider></SermonPagesProvider>
     </FormProvider>
   );
 }

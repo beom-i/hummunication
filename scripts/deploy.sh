@@ -28,6 +28,7 @@ pnpm lint
 pnpm typecheck
 pnpm test:validation
 pnpm test:weekly
+pnpm test:photos
 pnpm test:content
 node tests/deploy.mjs
 pnpm build
@@ -54,7 +55,7 @@ if [[ -z "$pr_number" ]]; then
 포함 커밋:
 $(git log --reverse --format='- %s' origin/main..HEAD)
 
-검증: pnpm lint, pnpm typecheck, pnpm test:validation, pnpm test:weekly, pnpm test:content, node tests/deploy.mjs, pnpm build 통과.
+검증: pnpm lint, pnpm typecheck, pnpm test:validation, pnpm test:weekly, pnpm test:photos, pnpm test:content, node tests/deploy.mjs, pnpm build 통과.
 작업 브랜치: $branch
 대상 커밋: $head_sha
 포함된 DB 마이그레이션은 운영 적용 이력을 읽기 전용으로 확인했습니다.
