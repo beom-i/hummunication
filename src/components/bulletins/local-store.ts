@@ -1,6 +1,9 @@
 import { mockBulletins } from "@/components/home/mock-bulletins";
 import { weeklyDefaultValues, weeklyDraftSchema } from "@/components/weekly/schemas";
-import { bulletinIdSchema, savedBulletinSchema, savedBulletinsSchema, type SavedBulletin } from "./schemas";
+import { z } from "zod";
+import { weeklyRefSchema, type WeeklyRef, type WeeklyFormData } from "@/features/weekly/schemas";
+import { legacyWeeklySchema } from "./schemas";
+import { bulletinIdSchema, savedBulletinsSchema, type SavedBulletin } from "./schemas";
 
 export const savedBulletinsKey = "hummunication.weekly.saved";
 export const legacyDraftKey = "hummunication.weekly-draft";
@@ -19,7 +22,11 @@ export function sampleBulletin(id: string): SavedBulletin | null {
   return { id, data, updatedAt: `${id}T00:00:00.000Z` };
 }
 
+export function markBulletinMigrated(id: string) { localStorage.setItem(`hummunication.weekly.migrated.${id}`, "1"); }
+export function isBulletinMigrated(id: string) { return localStorage.getItem(`hummunication.weekly.migrated.${id}`) === "1"; }
+
 export function findBulletin(id: string) {
+  if (isBulletinMigrated(id)) return null;
   if (!bulletinIdSchema.safeParse(id).success) return null;
   return loadSavedBulletins().find(record => record.id === id) ?? sampleBulletin(id);
 }
@@ -27,7 +34,7 @@ export function findBulletin(id: string) {
 export function recentBulletins() {
   const records = new Map(mockBulletins.map(record => [record.id, sampleBulletin(record.id)!]));
   for (const record of loadSavedBulletins()) records.set(record.id, record);
-  return [...records.values()].sort((a, b) => b.id.localeCompare(a.id));
+  return [...records.values()].filter(record => !isBulletinMigrated(record.id)).sort((a, b) => b.id.localeCompare(a.id));
 }
 
 // shortcut: date-code UI lock only; replace with server authorization when DB storage is connected.
@@ -35,15 +42,17 @@ export function allowBulletinEdit(id: string) { sessionStorage.setItem(editKey(i
 export function canEditBulletin(id: string) { return sessionStorage.getItem(editKey(id)) === "1"; }
 export function endBulletinEdit(id: string) { sessionStorage.removeItem(editKey(id)); }
 
-export function saveBulletin(value: unknown, editingId: string | null) {
-  const data = weeklyDraftSchema.parse(value);
-  const records = loadSavedBulletins();
-  if (editingId) {
-    if (editingId !== data.date || !canEditBulletin(editingId)) throw new Error("주보 상세에서 비밀번호를 확인한 후 다시 수정해 주세요");
-  } else if (records.some(record => record.id === data.date) || sampleBulletin(data.date)) {
-    throw new Error("해당 날짜의 주보가 있어요. 주보 상세에서 수정해 주세요");
-  }
-  const record = savedBulletinSchema.parse({ id: data.date, data, updatedAt: new Date().toISOString() });
-  localStorage.setItem(savedBulletinsKey, JSON.stringify([...records.filter(item => item.id !== record.id), record]));
-  return record;
+
+const pendingKey = (date: string) => `hummunication.weekly.pending.${date}`;
+const pendingSchema = z.object({ data: legacyWeeklySchema, ref: weeklyRefSchema.nullable() });
+export function savePendingWeekly(data: WeeklyFormData, ref: WeeklyRef | null) {
+  try { localStorage.setItem(pendingKey(data.date), JSON.stringify({ data, ref })); } catch { /* The live form remains intact when browser storage is full. */ }
+}
+export function loadPendingWeekly(date: string) {
+  const raw = localStorage.getItem(pendingKey(date));
+  if (!raw) return null;
+  try { const parsed = pendingSchema.safeParse(JSON.parse(raw)); return parsed.success && parsed.data.data.date === date ? parsed.data : null; } catch { return null; }
+}
+export function clearPendingWeekly(date: string) {
+  try { localStorage.removeItem(pendingKey(date)); localStorage.removeItem(legacyDraftKey); } catch { /* Server success must not become a failure because local cleanup is unavailable. */ }
 }

@@ -41,7 +41,10 @@ export function LoginForm({
       setError("root", { message: "이메일 또는 비밀번호가 올바르지 않아요." });
       return;
     }
-    router.push("/protected");
+    const next = new URLSearchParams(window.location.search).get("next");
+    const path = next?.split("?")[0];
+    router.push(next && path && ["/home", "/weekly", "/bulletins"].includes(path) ? next : "/home");
+    router.refresh();
   });
 
   return (

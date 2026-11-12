@@ -65,7 +65,7 @@ export function AppSidebar({ active = "home", onHome, onCardNews, onTeam }: {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => navigate(onCardNews)} tooltip="카드뉴스 만들기 · 개발 중" aria-label="카드뉴스 만들기"
+              <SidebarMenuButton isActive={active === "weekly"} onClick={() => navigate(onCardNews)} tooltip="카드뉴스 만들기" aria-label="카드뉴스 만들기"
                 className="rounded-lg font-bold">
                 <NavigationIcon name="card-news" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">카드뉴스 만들기</span>
               </SidebarMenuButton>

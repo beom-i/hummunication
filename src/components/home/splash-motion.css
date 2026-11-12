@@ -1,18 +1,20 @@
-@property --motion-translate-y { syntax: '<number>'; initial-value: 0; inherits: false; }
-.splash-147-4989 {
-  --motion-translate-y: 0; transform: var(--motion-layout-transform, translate(0px)) var(--motion-design-transform-inverse, matrix(1, 0, 0, 1, 0, 0)) translate(0px, calc(var(--motion-translate-y, 0) * 1px)) var(--motion-design-transform, matrix(1, 0, 0, 1, 0, 0)); transform-origin: 0 0; animation: kf_147_4989_--motion-translate-y_0 1.75s linear, kf_147_4989_opacity_0 1.75s linear; animation-iteration-count: infinite;
+.splash-c, .splash-o { animation: splash-letter-swap 1.75s both; }
+.splash-o { animation-delay: 36ms; }
+.splash-h, .splash-u { animation: splash-letter-rise 1.75s both; }
+.splash-u { animation-delay: 36ms; }
+.entry-splash { animation: splash-exit 300ms 1850ms ease-out both; }
+@keyframes splash-letter-swap {
+  0%, 15%, 100% { opacity: 1; translate: 0 0; }
+  32%, 65% { opacity: 0; translate: 0 -12px; }
+  84% { opacity: 1; translate: 0 0; }
 }
-@keyframes kf_147_4989_--motion-translate-y_0 { 0% { --motion-translate-y: 0; } 15% { animation-timing-function: ease-in-out; --motion-translate-y: 0; } 31.667% { --motion-translate-y: -12; } 65% { animation-timing-function: ease-out; --motion-translate-y: -12; } 83.333% { --motion-translate-y: 0; } 100% { --motion-translate-y: 0; } } @keyframes kf_147_4989_opacity_0 { 0% { opacity: 1; } 15% { animation-timing-function: ease-in-out; opacity: 1; } 25% { opacity: 0; } 65% { animation-timing-function: ease-out; opacity: 0; } 78.333% { opacity: 1; } 100% { opacity: 1; } }
-.splash-147-4990 {
-  --motion-translate-y: 0; transform: var(--motion-layout-transform, translate(0px)) var(--motion-design-transform-inverse, matrix(1, 0, 0, 1, 0, 0)) translate(0px, calc(var(--motion-translate-y, 0) * 1px)) var(--motion-design-transform, matrix(1, 0, 0, 1, 0, 0)); transform-origin: 0 0; animation: kf_147_4990_--motion-translate-y_0 1.75s linear, kf_147_4990_opacity_0 1.75s linear; animation-iteration-count: infinite;
+@keyframes splash-letter-rise {
+  0%, 17%, 100% { opacity: 0; translate: 0 90px; }
+  33%, 65% { opacity: 1; translate: 0 78px; }
+  82% { opacity: 0; translate: 0 90px; }
 }
-@keyframes kf_147_4990_--motion-translate-y_0 { 0% { --motion-translate-y: 0; } 17.083% { animation-timing-function: ease-in-out; --motion-translate-y: 0; } 33.75% { --motion-translate-y: -12; } 67.083% { animation-timing-function: ease-out; --motion-translate-y: -12; } 85.417% { --motion-translate-y: 0; } 100% { --motion-translate-y: 0; } } @keyframes kf_147_4990_opacity_0 { 0% { opacity: 1; } 17.083% { animation-timing-function: ease-in-out; opacity: 1; } 27.083% { opacity: 0; } 67.083% { animation-timing-function: ease-out; opacity: 0; } 80.417% { opacity: 1; } 100% { opacity: 1; } }
-.splash-147-4803 {
-  --motion-translate-y: 88.541626; transform: var(--motion-layout-transform, translate(0px)) var(--motion-design-transform-inverse, matrix(1, 0, 0, 1, 0, 0)) translate(0px, calc(var(--motion-translate-y, 0) * 1px)) var(--motion-design-transform, matrix(1, 0, 0, 1, 0, 0)); transform-origin: 0 0; animation: kf_147_4803_--motion-translate-y_0 1.75s linear, kf_147_4803_opacity_0 1.75s linear; animation-iteration-count: infinite;
+@keyframes splash-exit { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .splash-c, .splash-o, .entry-splash { animation: none; }
+  .splash-h, .splash-u { display: none; }
 }
-@keyframes kf_147_4803_--motion-translate-y_0 { 0% { --motion-translate-y: 88.541626; } 19.583% { animation-timing-function: ease-out; --motion-translate-y: 88.541626; } 35.417% { --motion-translate-y: 76.541626; } 67.083% { animation-timing-function: ease-in-out; --motion-translate-y: 76.541626; } 83.75% { --motion-translate-y: 88.541626; } 100% { --motion-translate-y: 88.541626; } } @keyframes kf_147_4803_opacity_0 { 0% { opacity: 0; } 19.583% { animation-timing-function: ease-out; opacity: 0; } 32.083% { opacity: 1; } 67.083% { animation-timing-function: ease-in-out; opacity: 1; } 77.083% { opacity: 0; } 100% { opacity: 0; } }
-.splash-147-4804 {
-  --motion-translate-y: 90.306641; transform: var(--motion-layout-transform, translate(0px)) var(--motion-design-transform-inverse, matrix(1, 0, 0, 1, 0, 0)) translate(0px, calc(var(--motion-translate-y, 0) * 1px)) var(--motion-design-transform, matrix(1, 0, 0, 1, 0, 0)); transform-origin: 0 0; animation: kf_147_4804_--motion-translate-y_0 1.75s linear, kf_147_4804_opacity_0 1.75s linear; animation-iteration-count: infinite;
-}
-@keyframes kf_147_4804_--motion-translate-y_0 { 0% { --motion-translate-y: 90.306641; } 17.5% { animation-timing-function: ease-out; --motion-translate-y: 90.306641; } 33.333% { --motion-translate-y: 78.306641; } 65% { animation-timing-function: ease-in-out; --motion-translate-y: 78.306641; } 81.667% { --motion-translate-y: 90.306641; } 100% { --motion-translate-y: 90.306641; } } @keyframes kf_147_4804_opacity_0 { 0% { opacity: 0; } 17.5% { animation-timing-function: ease-out; opacity: 0; } 30% { opacity: 1; } 65% { animation-timing-function: ease-in-out; opacity: 1; } 75% { opacity: 0; } 100% { opacity: 0; } }
-

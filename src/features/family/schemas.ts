@@ -1,0 +1,32 @@
+import { z } from "zod";
+import type { DefaultValues } from "react-hook-form";
+export const personSchema = z.object({ name: z.string().trim().max(100, "100자 이내로 입력해 주세요"), answer: z.string().max(3000, "3,000자 이내로 입력해 주세요") });
+const personCompleteSchema = personSchema.extend({ name: personSchema.shape.name.min(1, "이름을 입력해 주세요") });
+export const photoEditSchema = z.object({
+  rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+  sourceWidth: z.number().int().positive().max(50000), sourceHeight: z.number().int().positive().max(50000),
+  crop: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().positive().max(1), height: z.number().positive().max(1) })
+    .refine(c => c.x + c.width <= 1.001 && c.y + c.height <= 1.001, "크롭 영역을 확인해 주세요"),
+}).refine(edit => {
+  const w = edit.rotation % 180 ? edit.sourceHeight : edit.sourceWidth;
+  const h = edit.rotation % 180 ? edit.sourceWidth : edit.sourceHeight;
+  return Math.abs((edit.crop.width * w) / (edit.crop.height * h) - 119 / 71) < 0.01;
+}, "사진 비율을 확인해 주세요");
+export type PhotoEdit = z.infer<typeof photoEditSchema>;
+export const cropFormSchema = z.object({ area: photoEditSchema.shape.crop, rotation: photoEditSchema.shape.rotation });
+export type CropFormData = z.infer<typeof cropFormSchema>;
+export const cropDefaultValues: DefaultValues<CropFormData> = { area: { x: 0, y: 0, width: 1, height: 1 }, rotation: 0 };
+export const groupCompleteSchema = z.object({
+  name: z.string().trim().min(1, "이름을 입력해 주세요").max(100, "100자 이내로 입력해 주세요"),
+  photoId: z.uuid().nullable(),
+  photo: z.string().max(7500000, "5MB 이하의 사진을 올려 주세요").refine((value) => value === "" || value.startsWith("https://") || /^data:image\/(png|jpeg|webp);base64,/.test(value), "사진을 다시 올려 주세요"),
+  photoEdit: photoEditSchema.optional(),
+  leader: personCompleteSchema,
+  members: z.array(personCompleteSchema).max(30, "순원은 30명까지 입력해 주세요"),
+});
+
+export const groupFormSchema = groupCompleteSchema.extend({ name: z.string().trim().max(100, "100자 이내로 입력해 주세요"), leader: personSchema, members: z.array(personSchema).max(30, "순원은 30명까지 입력해 주세요") });
+export const storedGroupSchema = groupFormSchema.omit({ photo: true }).extend({ photoId: z.uuid().nullable().default(null), photoEdit: photoEditSchema.nullish().transform(value => value ?? null) });
+export const familyFormSchema = z.object({ groups: z.array(groupFormSchema).max(20, "순은 20개까지 입력해 주세요") });
+export const familyStoredSchema = z.object({ groups: z.array(storedGroupSchema).max(20) });
+export type FamilyFormData = z.infer<typeof familyFormSchema>;

@@ -71,7 +71,7 @@ export function paginateSermon(value: unknown, measure: HTMLElement) {
 const SermonPages = createContext<{ pages: string[]; ready: boolean }>({ pages: [""], ready: false });
 export function SermonPagesProvider({ children }: { children: React.ReactNode }) {
   const { control } = useFormContext<WeeklyFormData>();
-  const doc = useWatch({ control, name: "sermon.document" });
+  const doc = useWatch({ control, name: "sermon.content" });
   const [result, setResult] = useState<{ doc: RichDocument; pages: string[] } | null>(null);
   useEffect(() => {
     let cancelled = false;

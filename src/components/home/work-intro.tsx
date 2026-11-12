@@ -1,24 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 
 const asset = "/images/home/";
 
-export function WorkIntro({ onComplete }: { onComplete: () => void }) {
-  const container = useRef<HTMLElement>(null);
+export function WorkIntro({ onComplete, startedAt }: { onComplete: () => void; startedAt?: number }) {
   useEffect(() => {
-    let cancelled = false;
-    let timer: number | undefined;
-    const images = Array.from(container.current?.querySelectorAll("img") ?? []);
-    Promise.all(images.map((image) => image.decode().catch(() => undefined))).then(() => {
-      if (!cancelled) timer = window.setTimeout(onComplete, 3000);
-    });
-    return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [onComplete]);
+    const remaining = startedAt === undefined ? 3000 : Math.max(0, 3000 - (performance.now() - startedAt));
+    const timer = window.setTimeout(onComplete, remaining);
+    return () => window.clearTimeout(timer);
+  }, [onComplete, startedAt]);
 
   return (
-    <main ref={container} className="relative flex min-h-svh w-full flex-col items-center overflow-hidden pt-[140px] max-sm:pt-28" aria-labelledby="work-intro-heading">
+    <main className="relative flex min-h-svh w-full flex-col items-center overflow-hidden pt-[140px] max-sm:pt-28" role="status" aria-labelledby="work-intro-heading">
       <Image loading="eager" src={`${asset}intro-glow.svg`} alt="" width={1089.8} height={381.8} className="pointer-events-none absolute top-[-211.9px] left-1/2 max-w-none -translate-x-1/2 rotate-180 -scale-y-100" />
       <h1 id="work-intro-heading" className="relative text-center text-[44px] leading-[1.25] font-extrabold tracking-[-3.52px] max-sm:text-[32px] max-sm:tracking-[-2.56px]">
         <span className="text-home-brand">강단 라인업 작업</span>을<br />시작합니다

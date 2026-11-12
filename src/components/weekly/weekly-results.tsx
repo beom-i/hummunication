@@ -11,6 +11,9 @@ import { BulletinCard, FamilyCard, SermonCard, familyPageCount } from "./preview
 import { exportCards } from "./export-cards";
 import type { WeeklyFormData } from "./schemas";
 import { useSermonPages } from "./sermon-pagination";
+import { WeeklyStepSkeleton } from "./weekly-skeleton";
+import { SenderCard } from "./sender-editor";
+import { senderPrayerPages } from "./sender-pagination";
 
 type Artifact = { id: string; category: string; label: string; page: string; element: React.ReactNode };
 
@@ -20,6 +23,7 @@ export function WeeklyResults({ detail = false }: { detail?: boolean }) {
   const month = Number(date.slice(5, 7));
   const sections = useWatch({ control, name: "sections" });
   const groups = useWatch({ control, name: "groups" });
+  const senders = useWatch({ control, name: "senders" });
   const { pages, ready } = useSermonPages();
   const artifacts = useMemo(() => {
     const artifacts: Artifact[] = [];
@@ -29,8 +33,11 @@ export function WeeklyResults({ detail = false }: { detail?: boolean }) {
     if (sections.includes("family")) groups.forEach((group, groupIndex) => {
       for (let index = 0; index < familyPageCount(group); index++) artifacts.push({ id: `family-${groupIndex + 1}-${index + 1}`, category: "새가족 문답", label: "새가족 문답", page: `${group.name} · ${index === 0 ? "표지" : index === 1 ? "썸네일" : `문답 ${index - 1}`}`, element: <FamilyCard index={index} groupIndex={groupIndex} /> });
     });
+    if (sections.includes("senders")) (senders ?? []).forEach((sender, index) => {
+      senderPrayerPages(sender.prayer).forEach((_, page) => artifacts.push({ id: `sender-${index + 1}-${page + 1}`, category: "파송자", label: "파송자", page: `${sender.name || "미입력"} · ${page + 1}페이지`, element: <SenderCard index={index} page={page} /> }));
+    });
     return artifacts;
-  }, [sections, groups, pages.length, month]);
+  }, [sections, groups, senders, pages.length, month]);
   const [filter, setFilter] = useState("전체");
   const [excluded, setExcluded] = useState<string[]>([]);
   const [format, setFormat] = useState("png");
@@ -48,14 +55,13 @@ export function WeeklyResults({ detail = false }: { detail?: boolean }) {
     } catch { toast.error("파일을 만들지 못했어요. 다시 시도해 주세요"); }
     finally { setDownloading(false); }
   };
-  return <section className={`weekly-centered mx-auto w-full max-w-[1200px] px-0 ${detail ? "mt-8" : "mt-[102px] max-xl:px-6"}`} aria-label="결과물 목록">
+  if (sections.includes("sermon") && !ready) return <WeeklyStepSkeleton step={3} />;
+  return <section className={`weekly-centered mx-auto w-full max-w-[1200px] px-0 ${detail ? "mt-8" : "mt-[60px]"}`} aria-label="결과물 목록">
     {!detail && <div className="flex min-h-[382px] flex-col items-center justify-center rounded-3xl bg-export-hero px-6 py-11 text-center">
       <span className="relative block size-[102px]" aria-hidden="true"><Image src="/images/weekly/9bdee.png" alt="" width={102} height={102} className="result-check-base" /><span className="result-check-fill absolute inset-0 overflow-hidden"><Image src="/images/weekly/9bdee.png" alt="" width={102} height={102} /></span></span>
-      <h2 className="mt-4 text-[26px] font-bold tracking-[-2.08px] text-hero-foreground max-sm:text-xl">이번 주 결과물이 모두 준비됐어요</h2>
-      <p className="mt-1 text-base tracking-[-0.48px] text-secondary-foreground">주보 · 설교 정리 · 새가족 문답, 총 {artifacts.length}장</p>
+      <h2 className="mt-4 text-[26px] leading-8 font-bold tracking-[-2.08px] text-hero-foreground max-sm:text-xl">이번 주 결과물이<br />모두 준비됐어요</h2>
       <Button loading={downloading} disabled={!artifacts.length || (sections.includes("sermon") && !ready)} onClick={() => download(true)} className="mt-8 h-14 gap-1.5 rounded-2xl bg-home-brand px-7 text-base font-extrabold text-foreground hover:bg-home-brand/85">{!downloading && <Image src="/images/weekly/f4a70.svg" alt="" width={18} height={18} />}전부 ZIP으로 받기</Button>
     </div>}
-    {sections.includes("senders") && <p className="mt-4 text-sm text-muted-foreground">파송자 결과물은 입력 화면과 템플릿 연결 후 추가돼요.</p>}
     <div className="mt-10 flex flex-wrap gap-2" aria-label="결과물 종류">
       {categories.map((category) => <Button key={category} aria-pressed={filter === category} variant={filter === category ? "default" : "outline"} className="h-10 gap-1 rounded-full px-4 transition-colors active:translate-y-0" onClick={() => setFilter(category)}>{category}<span className={filter === category ? "text-home-brand" : "text-muted-foreground"}>{category === "전체" ? artifacts.length : artifacts.filter((artifact) => artifact.category === category).length}</span></Button>)}
     </div>

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test:content": "node --experimental-strip-types scripts/check-rich-document.mjs"
+    "test:content": "node --experimental-strip-types scripts/check-rich-document.mjs",
+    "test:validation": "node --experimental-strip-types --conditions=react-server --import ./tests/register.mjs tests/validation.mjs",
+    "test:backend": "node tests/run-backend.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.2",
