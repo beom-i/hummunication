@@ -6,7 +6,7 @@ export { sectionOptions, newFamily } from "@/features/weekly/schemas";
 export { photoEditSchema, cropFormSchema, cropDefaultValues, type PhotoEdit, type CropFormData } from "@/features/family/schemas";
 export { photoSchema } from "@/features/files/schemas";
 
-export { senderPersonSchema as senderSchema, senderPersonCompleteSchema as senderCompleteSchema, newSender } from "@/features/sender/schemas";
+export { senderFormSchema as senderSchema, senderCompleteSchema, newSender } from "@/features/sender/schemas";
 import { newSender } from "@/features/sender/schemas";
 export const weeklyDraftSchema = baseDraftSchema;
 export const weeklySchema = baseSchema;
@@ -15,6 +15,6 @@ export const weeklyDefaultValues: DefaultValues<WeeklyFormData> = {
   ...baseDefaults,
   sections: ["thumbnail", "cover", "sermon", "family"],
   sermonThumbnail: "",
-  groups: [{ ...newFamily(0), name: "" }],
+  families: [{ ...newFamily(0), name: "" }],
   senders: [newSender()],
 };

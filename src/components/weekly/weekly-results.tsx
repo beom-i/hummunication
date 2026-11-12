@@ -22,7 +22,7 @@ export function WeeklyResults({ detail = false }: { detail?: boolean }) {
   const date = useWatch({ control, name: "date" });
   const month = Number(date.slice(5, 7));
   const sections = useWatch({ control, name: "sections" });
-  const groups = useWatch({ control, name: "groups" });
+  const families = useWatch({ control, name: "families" });
   const senders = useWatch({ control, name: "senders" });
   const { pages, ready } = useSermonPages();
   const artifacts = useMemo(() => {
@@ -30,14 +30,14 @@ export function WeeklyResults({ detail = false }: { detail?: boolean }) {
     if (sections.includes("thumbnail")) artifacts.push({ id: "bulletin-thumbnail", category: "주보 썸네일", label: "주보 썸네일", page: `${month}월 주보`, element: <BulletinCard /> });
     if (sections.includes("cover")) artifacts.push({ id: "bulletin-cover", category: "주보 표지", label: "주보 표지", page: `${month}월 주보`, element: <BulletinCard cover /> });
     if (sections.includes("sermon")) for (let index = 0; index <= pages.length; index++) artifacts.push({ id: `sermon-${index + 1}`, category: "설교 정리", label: "설교 정리", page: `${index + 1}페이지`, element: <SermonCard index={index} /> });
-    if (sections.includes("family")) groups.forEach((group, groupIndex) => {
+    if (sections.includes("family")) families.forEach((group, groupIndex) => {
       for (let index = 0; index < familyPageCount(group); index++) artifacts.push({ id: `family-${groupIndex + 1}-${index + 1}`, category: "새가족 문답", label: "새가족 문답", page: `${group.name} · ${index === 0 ? "표지" : index === 1 ? "썸네일" : `문답 ${index - 1}`}`, element: <FamilyCard index={index} groupIndex={groupIndex} /> });
     });
     if (sections.includes("senders")) (senders ?? []).forEach((sender, index) => {
       senderPrayerPages(sender.prayer).forEach((_, page) => artifacts.push({ id: `sender-${index + 1}-${page + 1}`, category: "파송자", label: "파송자", page: `${sender.name || "미입력"} · ${page + 1}페이지`, element: <SenderCard index={index} page={page} /> }));
     });
     return artifacts;
-  }, [sections, groups, senders, pages.length, month]);
+  }, [sections, families, senders, pages.length, month]);
   const [filter, setFilter] = useState("전체");
   const [excluded, setExcluded] = useState<string[]>([]);
   const [format, setFormat] = useState("png");

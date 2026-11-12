@@ -1,59 +1,60 @@
 # 백엔드 운영 적용 상태
 
-확인 시각: 2026-11-12T05:18:21+00:00. 시작 브랜치: `feat/weekly-backend`. 동시 UI 작업으로 최종 확인 시 현재 브랜치는 `feat/figma-weekly-mockups`이며, 적용한 첫 migration은 `bd696c2`, 파송자·썸네일 후속 migration은 `2791fcd`로 각각 로컬 커밋했다. 앱과 동시 UI 변경은 아직 작업 폴더에 있다.
+2026-11-12 현재. 운영 Supabase DB 적용과 웹사이트 배포는 별개다.
 
-## 적용 완료
+## 현재 운영 구조
 
-운영 Supabase에 `20261112050000_weekly_content.sql`을 적용했고, 운영 메타데이터를 다시 조회해 이력·권한·제약을 확인했다. 이 migration은 이미 적용됐으므로 수정·삭제하지 않고 이후 변경은 새 파일로 추가한다.
+업무 테이블은 weekly / sermon / family / sender / files 다섯 개다.
 
-- 테이블: `weekly`, `sermon`, `family`, `sender`, `sender_person`, `files`.
-- 성경 구절: `sermon.bible`. 정리 문서: `sermon.content`.
-- 여섯 테이블 모두 RLS 활성. authenticated 활성 원본 조회만 명시적 허용.
-- anon 테이블 조회와 변경 함수 실행, authenticated 테이블 직접 쓰기를 차단했다. 사용자 식별은 서버 getClaims 및 DB auth.uid로 검증하며 익명 Auth 계정을 거절한다.
-- 저장·주보 연결·버전 비교는 DB 함수에서 한 트랜잭션으로 처리한다. 연결 원본 중 하나가 충돌하면 전체 롤백한다.
-- 소프트 삭제는 deleted_at을 기록한다. 주보 삭제 시 원본과 FK를 보존하고, 연결된 원본의 삭제를 거절한다. 활성 주보 날짜만 부분 UNIQUE다.
-- 파일은 private uploads에 저장하고 files.id로 참조한다. 등록된 사진을 원본 소유자가 직접 덮어쓰거나 물리 삭제하는 Storage 정책을 제거했다. 등록된 활성 원본만 팀 공동 조회하며 기존 미등록 파일의 소유자 조회는 보존한다. 서명 URL은 1시간 유효하다.
-- 운영 스키마에서 Supabase DB·RPC 타입을 생성해 `src/lib/supabase/database.types.ts`에 반영했다.
+- 파송자 한 사람을 sender 한 행으로 저장한다. 이름·기수·소속 순·파송 날짜·기도제목·표시 순서를 일반 컬럼으로 둔다.
+- sender.weekly_id → weekly.id. 한 주보에 여러 파송자를 연결하며 미연결 원본은 NULL로 보존한다.
+- 별도 파송자 묶음 테이블과 weekly.sender_id는 제거했다.
+- 저장 번호 컬럼·RPC 인수·서버와 프론트 타입을 제거했다. 마지막에 저장한 내용이 반영된다.
+- sermon.bible은 성경 구절, sermon.content는 제한된 Tiptap 문서다. sermon.thumbnail_id는 files.id를 참조한다.
+- family 한 행은 순 하나다. weekly_id, name, photo_id, photo_edit, leader_name, leader_answer, members, position을 저장한다. 프론트와 서버도 같은 families 배열을 사용한다.
+- 모든 테이블은 RLS를 활성화하고 authenticated SELECT를 명시적으로 허용한다. anon 조회와 authenticated 직접 쓰기는 금지한다.
+- 사용자 확인은 getClaims 및 DB auth.uid로 수행하고 익명 Auth를 거절한다. 공개 회원가입은 없다.
+- 주보 전체 저장은 한 DB 트랜잭션이다. 일부 원본의 검증·참조 오류가 나면 전체 롤백한다.
+- 소프트 삭제는 deleted_at을 기록한다. 삭제된 주보의 원본과 사진 참조도 보존한다. 문답 순·파송자 명단에서 제거한 행도 소프트 삭제한다.
+- 사진은 private uploads에 저장하고 원본을 덮어쓰거나 물리 삭제할 수 없도록 한다. 서명 URL은 1시간 유효하다.
 
-운영 Auth config diff에서도 로컬의 가입·익명 계정 비허용 설정과 차이가 없음을 확인했다. 해당 두 항목은 미관리 설정 목록에도 없었다. 다른 Auth 설정은 변경하지 않았다.
+[상세 컬럼](weekly-data-model.md) · [ERD HTML](reports/weekly-data-erd.html) · [실제 코드 HTML](reports/backend-code-structure.html)
 
-migration SHA-256: `64e91ecc518dde3ef3a848c2b3ba4050a393f0993712864093c432821321e941`.
+## 마이그레이션 이력
 
-## 앱 코드
+이미 적용한 파일은 수정·삭제하지 않고 새 migration으로 변경했다.
 
-`src/features/{weekly,sermon,family,files}`에 원본 스키마와 서버 함수를 두었다. 기존 UI는 공통 스키마를 사용하고 서버 오류를 필드 아래·errors.root·toast에 연결한다. 미완성 저장과 다음 단계 필수 검증은 구분한다.
+1. 20261112050000_weekly_content.sql — 설교·문답·주보·파일 및 권한·트랜잭션. 로컬 커밋 bd696c2.
+2. 20261112100000_weekly_content_sender.sql — 파송자 초기 구조·설교 썸네일. 로컬 커밋 2791fcd.
+3. 20261112110000_weekly_content_simplify.sql — 파송자 직접 연결과 저장 계약 단순화. 로컬 커밋 5c9fb67.
+4. 20261112120000_weekly_content_families.sql — 순별 문답과 프론트·백엔드 배열 계약 연결.
 
-홈 목록·상세·편집 로드는 서버 조회를 사용한다. 기존 브라우저 원본은 보존하며 passage/document를 bible/content로 읽어 온다. 저장 전에 사진을 업로드하고, 전체 저장에 성공한 후에만 서버 원본으로 전환한다. 복구본에는 최초 조회한 version도 보존하여 재로그인 후 타인의 수정 내용을 조용히 덮어쓰지 않는다. 브라우저 저장 공간 부족은 서버 저장을 막지 않는다.
+이전 단순화 파일 SHA-256: `a062c48daf5acd7b627eb0a386a744db1d32bb8a08474aabbe5ba1649de62cde`.
 
-공개 화면 진입은 유지한다. 실제 서버 원본 조회·저장·삭제는 관리자 발급 팀원 계정이 필요하다. 날짜 6자리 UI 확인은 서버 권한이 아니다.
+최신 migration은 기존 파송자 사람 행의 ID·입력값·삭제 기록을 유지하며 주보 FK를 옮긴다. 운영 이관 전후 파송자 전체·삭제·미연결 행 개수는 모두 0으로 일치했다. 실제 개인 데이터는 조회하지 않았다.
 
-파송자 입력과 설교 썸네일의 서버 저장 연결도 추가했다. UI·서버가 features 스키마를 함께 사용하고, 파일 업로드 후 전체 주보를 한 번에 저장한다. 자동 복구본에도 원래 읽은 version을 보존한다.
+## 순별 family 연동 적용
 
-## 2026-11-12 추가 적용 — 파송자 관계형 저장
+20261112120000_weekly_content_families.sql을 운영에 적용했다. SHA-256: `68a1a870d77e924d0864bc8bb1623837d2721a6a2bea1440fdeb53badc7fb070`.
 
-`20261112100000_weekly_content_sender.sql`을 운영 DB에 적용하고 실제 컬럼·FK·RLS·역할 권한을 다시 조회했다. 이미 적용한 파일이므로 이후 수정은 새 migration으로 한다.
+- weekly.family_id를 제거하고 family.weekly_id로 순별 원본을 연결한다. 이름·사진 참조·순장 이름과 답변은 일반 컬럼, 순원은 members 배열이다.
+- 기존 여러 순을 각 행으로 이관한다. 첫 순은 기존 ID를 유지하며 나머지는 새 ID를 발급한다. 생성·수정·삭제 기록과 사진 크롭을 보존한다.
+- 운영 이관 전 순 개수 0, 이관 후 family 행 0으로 일치했다. 실제 개인 입력을 조회하지 않았다.
+- RLS, authenticated SELECT, anon 조회·RPC 차단, 직접 DML 차단 및 주보·파일 FK를 다시 확인했다.
+- families와 senders는 동일한 단위의 배열 계약을 사용한다. 필드·타입·검증·미리보기·사진 업로드·서버 저장·복구본을 연결했다.
+- 실제 운영 스키마에서 DB·RPC 타입을 생성했다. 저장 요청은 업로드한 파일 ID를 보내고 사진 본문을 다시 보내지 않는다.
 
-- `sender`: 파송자 묶음. id/version과 공통 생성·수정·삭제 기록.
-- `sender_person`: id, sender_id, name, generation, group_name, date, prayer, position, created_at, updated_at, updated_by, deleted_at. **people JSONB 컬럼은 없다.**
-- `weekly.sender_id`: NULL 허용 UNIQUE FK. 한 주보가 묶음 한 건을 연결하고 묶음은 여러 사람 행을 가진다.
-- `sermon.thumbnail_id`: private 업로드 원본인 files.id FK. 삭제된 설교의 사진 참조도 보호한다.
-- 사람 목록 변경은 sender.version으로 한 번에 충돌 검사한다. 순서를 바꿔도 사람 ID가 유지되고 제거는 소프트 삭제한다. 이미 삭제한 사람이나 다른 묶음의 ID로 저장하면 거절한다.
-- 새 테이블도 authenticated SELECT + RLS만 허용한다. 직접 INSERT/UPDATE/DELETE 및 anon 조회·RPC 실행은 금지한다.
-- RPC의 people JSON과 조회 배열은 전송용이며 저장 데이터는 일반 컬럼이다. 기존 family.groups와 sermon.content의 JSONB는 유지한다.
+## 코드와 검증
 
-migration SHA-256: `c545568d7fdd69fcb7388052697e3577750b9c51594faa8ef7654c97405ddcd2`.
+src/features/{weekly,sermon,family,sender,files}에서 도메인별 스키마·조회·변경을 관리한다. UI와 서버는 같은 Zod를 사용하며 RHF FieldError·root·toast에 오류를 연결한다. 기존 브라우저 입력의 passage/document와 파송자 personId도 읽을 때 현재 필드로 바꾼다. 저장에 실패하면 입력과 원본 ID를 보존한다.
 
+- lint / typecheck / test:validation / test:content / mockup 검증 / 배포 빌드 통과.
+- 독립 임시 PostgreSQL에서 기존 계약으로 만든 데이터의 이관, ID·서식 보존, 마지막 저장 반영, 파송자 순서 변경·제거, 잘못된 연결 차단, 일부 실패 전체 롤백, 소프트 삭제와 날짜 재사용을 검증했다.
+- 운영 재조회에서 최신 migration 이력, 최종 테이블 5개, 저장 번호 컬럼·인수 부재, 파송자 FK·RLS·역할 권한과 행 개수 보존을 확인했다.
+- 운영 스키마에서 실제 Supabase DB·RPC 타입을 다시 생성했다.
 
-## 검증
+## 남은 웹 배포와 확인
 
-- pnpm lint / pnpm typecheck / pnpm test:validation / pnpm test:content 통과.
-- pnpm test:backend: 독립 임시 PostgreSQL을 생성·정리하며 실제 DB 저장·조회·서식 보존·삭제 후 조회·참조 보호·충돌·전체 롤백·날짜 재사용·권한을 검증했다. Auth/JWT와 Storage 테이블은 로컬 경계 fixture다. 운영 데이터에 테스트 원본을 만들지 않았다.
-- 브라우저: bible 길이 초과와 파송자 기수 오류가 필드 아래에 표시되고, 미로그인 서버 저장 실패가 root·toast에 표시됨을 확인했다. 새로고침 뒤 파송자의 이름·007 기수·소속 순·날짜·기도제목도 복구됐다.
-- Next.js 배포 빌드 통과. 동시 UI 작업의 .next와 충돌하지 않도록 `HUMMUNICATION_BUILD_DIR=.next-backend pnpm build`로 분리 검증했다. 일반 배포의 기본 경로는 .next다.
-- 운영 재조회: 두 migration 이력 존재, 여섯 테이블 RLS true, anon 주보 SELECT false, authenticated 직접 UPDATE false, Storage 물리 DELETE 정책 없음, PUBLIC/anon 변경·조회 함수 EXECUTE grant 0건, 활성 날짜 부분 UNIQUE 및 bible 컬럼 존재 확인.
+이 문서는 배포 커밋 직전 개발 검증 기록이다. 앱 코드·동시 UI 변경을 PR로 배포하며 ci·gitleaks와 Vercel 성공 여부를 별도로 확인한다. 현재 기능 브랜치는 feat/figma-weekly-mockups다. 적용한 migration은 별도 로컬 이력에 기록한다.
 
-## 남은 배포와 확인
-
-웹앱 코드는 현재 작업 브랜치에 있으며 원격 push·main 병합·Vercel 배포는 실행하지 않았다. 운영 DB 적용과 웹앱 배포를 혼동하지 않는다. 기존 deploy.sh는 migration 포함 시 보수적으로 중단하므로, 앱 배포 전 이미 적용한 DB 이력을 확인하고 이 절차를 맞춰야 한다.
-
-실제 팀원 로그인으로 성공 저장·사진 업로드까지 수행하는 전체 흐름은 아직 확인하지 않았다. 파송자·썸네일의 로컬 DB 통합 테스트와 프론트 연결은 검증했고, 실제 팀원 계정의 브라우저 저장·업로드 성공 경로는 미확인이다. 작업 폴더의 동시 UI 변경은 보존했다.
+실제 팀원 계정으로 브라우저 저장·사진 업로드가 성공하는 전체 경로는 추가 확인이 필요하다. 현재 단계의 저장·권한 동작은 로컬 통합 테스트로 검증했다. 1440/820/390px 화면 전환·뒤로가기·모션 감소 설정도 통과했다. 이번 브라우저 검증에서 families 순장 이름의 길이 오류, 순장·순원 답변의 카드 반영, 비로그인 저장 실패 알림과 입력 유지도 확인했다.

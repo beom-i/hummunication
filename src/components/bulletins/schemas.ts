@@ -8,7 +8,8 @@ export const legacyWeeklySchema = z.preprocess(value => {
   const data = value as Record<string, unknown>;
   const sermon = data.sermon && typeof data.sermon === "object" ? data.sermon as Record<string, unknown> : {};
   return { ...data, sermon: { ...sermon, bible: sermon.bible ?? sermon.passage ?? "", content: typeof sermon.content === "string" ? documentFromText(sermon.content) : sermon.content ?? sermon.document },
-    groups: Array.isArray(data.groups) ? data.groups.map(group => ({ ...group, photoId: group.photoId ?? null })) : data.groups };
+    senders: Array.isArray(data.senders) ? data.senders.map(person => ({ ...person, id: person.id ?? person.personId ?? null, group_name: person.group_name ?? person.group ?? "" })) : data.senders,
+    families: Array.isArray(data.families) ? data.families : Array.isArray(data.groups) ? data.groups.map(group => ({ ...group, id: group.id ?? null, photo_id: group.photoId ?? null, photo_edit: group.photoEdit ?? null, leader_name: group.leader?.name ?? "", leader_answer: group.leader?.answer ?? "" })) : [] };
 }, weeklyDraftSchema);
 
 export const bulletinIdSchema = z.iso.date();

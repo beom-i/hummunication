@@ -11,7 +11,7 @@ export async function saveSender(input: unknown) {
   if (!parsed.success) return invalidInput(parsed.error);
   return withUser(async db => {
     const { ref, values } = parsed.data;
-    const { data, error } = await db.rpc("save_sender", { p_id: ref?.id ?? undefined, p_version: ref?.version ?? undefined, p_values: { people: values.people.map(person => ({ ...person, personId: person.personId ?? null, date: person.date || null })) } });
+    const { data, error } = await db.rpc("save_sender", { p_id: ref?.id ?? undefined, p_values: { ...values, date: values.date || null } });
     if (error) return databaseFailure(error);
     revalidatePath("/bulletins");
     return getSender(data);
@@ -21,7 +21,7 @@ export async function deleteSender(input: unknown): Promise<Result<null>> {
   const parsed = recordRefSchema.safeParse(input);
   if (!parsed.success) return invalidInput(parsed.error);
   return withUser(async db => {
-    const { error } = await db.rpc("delete_sender", { p_id: parsed.data.id, p_version: parsed.data.version });
+    const { error } = await db.rpc("delete_sender", { p_id: parsed.data.id });
     if (error) return databaseFailure(error);
     revalidatePath("/bulletins");
     return { ok: true, data: null };

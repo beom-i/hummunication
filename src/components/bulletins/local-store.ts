@@ -54,5 +54,10 @@ export function loadPendingWeekly(date: string) {
   try { const parsed = pendingSchema.safeParse(JSON.parse(raw)); return parsed.success && parsed.data.data.date === date ? parsed.data : null; } catch { return null; }
 }
 export function clearPendingWeekly(date: string) {
-  try { localStorage.removeItem(pendingKey(date)); localStorage.removeItem(legacyDraftKey); } catch { /* Server success must not become a failure because local cleanup is unavailable. */ }
+  try {
+    localStorage.removeItem(pendingKey(date));
+    localStorage.removeItem(`${legacyDraftKey}.${date}`);
+    const draft = localStorage.getItem(legacyDraftKey);
+    if (draft && JSON.parse(draft)?.date === date) localStorage.removeItem(legacyDraftKey);
+  } catch { /* Server success must not become a failure because local cleanup is unavailable. */ }
 }

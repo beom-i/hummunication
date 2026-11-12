@@ -92,6 +92,10 @@
   [data-progress-open="true"] .sermon-preview-grid { padding-inline: 0; }
   .family-detail-layout { grid-template-columns: 1fr 1fr; gap: 24px; }
 }
+@media (min-width: 768px) and (max-width: 1023px) {
+  .progress-sidebar { position: relative; top: auto; right: auto; width: calc(100% - 64px); max-width: 560px; margin: 24px auto 0; order: -1; }
+  .weekly-workspace .weekly-heading { padding-top: 32px; }
+}
 @media (max-width: 767px) {
   .progress-sidebar { position: relative; top: auto; right: auto; width: calc(100% - 40px); margin: 64px auto 0; order: -1; }
   .weekly-workspace .weekly-heading { padding-top: 32px; }
@@ -114,7 +118,7 @@
   .weekly-sermon-layout, .weekly-content-frame .weekly-content, .weekly-skeleton-layer, .weekly-step-indicator span, .progress-collapse, .progress-toggle, .progress-toggle-title, .progress-toggle-current, .progress-list, .progress-step, .progress-circle, .progress-substep-collapse, .progress-substeps, .progress-substep, .progress-substep-label, .progress-substep-placeholder, .type-collage-card, .type-ring, .weekly-workspace .rich-editor * { transition: none !important; }
   .weekly-workspace .weekly-page-enter, .weekly-skeleton-layer, .entry-splash { animation: none; }
   .type-collage-stage[data-introducing="true"] .type-collage-slot { animation: none; }
-  .weekly-step-skeleton [data-slot="skeleton"], .progress-sidebar[data-loading="true"] .progress-substep-placeholder { animation: none; }
+  .weekly-step-skeleton [data-slot="skeleton"], .weekly-workspace[aria-busy="true"] [data-slot="skeleton"], .progress-sidebar[data-loading="true"] .progress-substep-placeholder { animation: none; }
 }
 
 body:has(.weekly-delete-dialog) [data-slot="dialog-overlay"] { background: var(--delete-overlay); backdrop-filter: none; }

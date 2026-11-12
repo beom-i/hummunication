@@ -19,7 +19,7 @@ export const sermonCompleteSchema = sermonFormSchema.extend({
   bible: sermonFormSchema.shape.bible.min(1, "성경 본문을 입력해 주세요"),
   content: richDocumentSchema.refine(doc => documentText(doc).trim().length > 0, "정리 내용을 입력해 주세요"),
 });
-export const recordRefSchema = z.object({ id: z.uuid(), version: z.number().int().positive() });
+export const recordRefSchema = z.object({ id: z.uuid() });
 export const nullableRecordRefSchema = recordRefSchema.nullable();
 export const sermonSchema = sermonFormSchema.extend(recordRefSchema.shape);
 export type Sermon = z.infer<typeof sermonSchema>;

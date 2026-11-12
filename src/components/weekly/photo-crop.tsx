@@ -13,14 +13,14 @@ import { photoGeometry, centeredPhotoCrop } from "./photo-crop-geometry";
 import "./photo-crop.css";
 import { cropDefaultValues, cropFormSchema, photoEditSchema, type CropFormData, type PhotoEdit } from "./schemas";
 
-export function CroppedPhoto({ source, edit, label, ...props }: { source: string; edit?: PhotoEdit; label: string } & React.SVGProps<SVGSVGElement>) {
+export function CroppedPhoto({ source, edit, label, ...props }: { source: string; edit?: PhotoEdit | null; label: string } & React.SVGProps<SVGSVGElement>) {
   if (!edit) return <svg viewBox="0 0 238 142" preserveAspectRatio="xMidYMid slice" role="img" aria-label={label} {...props}><image href={source} width="238" height="142" preserveAspectRatio="xMidYMid slice" /></svg>;
   const { sourceWidth: w, sourceHeight: h, rotation, crop } = edit;
   const { width: rw, height: rh, transform } = photoGeometry(w, h, rotation);
   return <svg viewBox={`${crop.x * rw} ${crop.y * rh} ${crop.width * rw} ${crop.height * rh}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={label} {...props}><g transform={transform}><image href={source} width={w} height={h} /></g></svg>;
 }
 
-export function PhotoCropDialog({ source, edit, onApply, onClose }: { source: string; edit?: PhotoEdit; onApply: (edit: PhotoEdit) => void; onClose: () => void }) {
+export function PhotoCropDialog({ source, edit, onApply, onClose }: { source: string; edit?: PhotoEdit | null; onApply: (edit: PhotoEdit) => void; onClose: () => void }) {
   const { control, setValue, handleSubmit, setError, formState: { errors } } = useForm<CropFormData>({ resolver: zodResolver(cropFormSchema), defaultValues: { ...cropDefaultValues, area: edit?.crop ?? cropDefaultValues.area, rotation: edit?.rotation ?? 0 } });
   const rotation = useWatch({ control, name: "rotation" });
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);

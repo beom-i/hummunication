@@ -18,31 +18,64 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
-          groups: Json
           id: string
+          leader_answer: string
+          leader_name: string
+          members: Json
+          name: string
+          photo_edit: Json | null
+          photo_id: string | null
+          position: number
           updated_at: string
           updated_by: string | null
-          version: number
+          weekly_id: string | null
         }
         Insert: {
           created_at?: string
           deleted_at?: string | null
-          groups?: Json
           id?: string
+          leader_answer?: string
+          leader_name?: string
+          members?: Json
+          name?: string
+          photo_edit?: Json | null
+          photo_id?: string | null
+          position?: number
           updated_at?: string
           updated_by?: string | null
-          version?: number
+          weekly_id?: string | null
         }
         Update: {
           created_at?: string
           deleted_at?: string | null
-          groups?: Json
           id?: string
+          leader_answer?: string
+          leader_name?: string
+          members?: Json
+          name?: string
+          photo_edit?: Json | null
+          photo_id?: string | null
+          position?: number
           updated_at?: string
           updated_by?: string | null
-          version?: number
+          weekly_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "family_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_weekly_id_fkey"
+            columns: ["weekly_id"]
+            isOneToOne: false
+            referencedRelation: "weekly"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       files: {
         Row: {
@@ -71,33 +104,6 @@ export type Database = {
       sender: {
         Row: {
           created_at: string
-          deleted_at: string | null
-          id: string
-          updated_at: string
-          updated_by: string | null
-          version: number
-        }
-        Insert: {
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          updated_at?: string
-          updated_by?: string | null
-          version?: number
-        }
-        Update: {
-          created_at?: string
-          deleted_at?: string | null
-          id?: string
-          updated_at?: string
-          updated_by?: string | null
-          version?: number
-        }
-        Relationships: []
-      }
-      sender_person: {
-        Row: {
-          created_at: string
           date: string | null
           deleted_at: string | null
           generation: string
@@ -106,9 +112,9 @@ export type Database = {
           name: string
           position: number
           prayer: string
-          sender_id: string
           updated_at: string
           updated_by: string | null
+          weekly_id: string | null
         }
         Insert: {
           created_at?: string
@@ -120,9 +126,9 @@ export type Database = {
           name?: string
           position: number
           prayer?: string
-          sender_id: string
           updated_at?: string
           updated_by?: string | null
+          weekly_id?: string | null
         }
         Update: {
           created_at?: string
@@ -134,16 +140,16 @@ export type Database = {
           name?: string
           position?: number
           prayer?: string
-          sender_id?: string
           updated_at?: string
           updated_by?: string | null
+          weekly_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "sender_person_sender_id_fkey"
-            columns: ["sender_id"]
+            foreignKeyName: "sender_weekly_id_fkey"
+            columns: ["weekly_id"]
             isOneToOne: false
-            referencedRelation: "sender"
+            referencedRelation: "weekly"
             referencedColumns: ["id"]
           },
         ]
@@ -161,7 +167,6 @@ export type Database = {
           title: string
           updated_at: string
           updated_by: string | null
-          version: number
         }
         Insert: {
           bible?: string
@@ -175,7 +180,6 @@ export type Database = {
           title?: string
           updated_at?: string
           updated_by?: string | null
-          version?: number
         }
         Update: {
           bible?: string
@@ -189,7 +193,6 @@ export type Database = {
           title?: string
           updated_at?: string
           updated_by?: string | null
-          version?: number
         }
         Relationships: [
           {
@@ -206,56 +209,33 @@ export type Database = {
           created_at: string
           date: string
           deleted_at: string | null
-          family_id: string | null
           id: string
           sections: string[]
-          sender_id: string | null
           sermon_id: string | null
           updated_at: string
           updated_by: string | null
-          version: number
         }
         Insert: {
           created_at?: string
           date: string
           deleted_at?: string | null
-          family_id?: string | null
           id?: string
           sections?: string[]
-          sender_id?: string | null
           sermon_id?: string | null
           updated_at?: string
           updated_by?: string | null
-          version?: number
         }
         Update: {
           created_at?: string
           date?: string
           deleted_at?: string | null
-          family_id?: string | null
           id?: string
           sections?: string[]
-          sender_id?: string | null
           sermon_id?: string | null
           updated_at?: string
           updated_by?: string | null
-          version?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "weekly_family_id_fkey"
-            columns: ["family_id"]
-            isOneToOne: true
-            referencedRelation: "family"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "weekly_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: true
-            referencedRelation: "sender"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "weekly_sermon_id_fkey"
             columns: ["sermon_id"]
@@ -270,48 +250,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_family: {
-        Args: { p_id: string; p_version: number }
-        Returns: undefined
-      }
+      delete_family: { Args: { p_id: string }; Returns: undefined }
       delete_file: { Args: { p_id: string }; Returns: undefined }
-      delete_sender: {
-        Args: { p_id: string; p_version: number }
-        Returns: undefined
-      }
-      delete_sermon: {
-        Args: { p_id: string; p_version: number }
-        Returns: undefined
-      }
-      delete_weekly: {
-        Args: { p_id: string; p_version: number }
-        Returns: undefined
-      }
+      delete_sender: { Args: { p_id: string }; Returns: undefined }
+      delete_sermon: { Args: { p_id: string }; Returns: undefined }
+      delete_weekly: { Args: { p_id: string }; Returns: undefined }
+      get_family: { Args: { p_id: string }; Returns: Json }
       get_sender: { Args: { p_id: string }; Returns: Json }
       get_sermon: { Args: { p_id: string }; Returns: Json }
       get_weekly: { Args: { p_date: string }; Returns: Json }
       register_file: { Args: { p_path: string }; Returns: string }
-      save_family: {
-        Args: { p_id?: string; p_values?: Json; p_version?: number }
-        Returns: string
-      }
-      save_sender: {
-        Args: { p_id?: string; p_values?: Json; p_version?: number }
-        Returns: string
-      }
-      save_sermon: {
-        Args: { p_id?: string; p_values?: Json; p_version?: number }
-        Returns: string
-      }
+      save_family: { Args: { p_id?: string; p_values?: Json }; Returns: string }
+      save_sender: { Args: { p_id?: string; p_values?: Json }; Returns: string }
+      save_sermon: { Args: { p_id?: string; p_values?: Json }; Returns: string }
       save_weekly: {
         Args: {
           p_date?: string
-          p_family?: Json
+          p_families?: Json
           p_id?: string
           p_sections?: string[]
-          p_sender?: Json
+          p_senders?: Json
           p_sermon?: Json
-          p_version?: number
         }
         Returns: string
       }

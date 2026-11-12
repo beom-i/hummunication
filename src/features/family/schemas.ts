@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { DefaultValues } from "react-hook-form";
+import { recordRefSchema } from "@/features/sermon/schemas";
 export const personSchema = z.object({ name: z.string().trim().max(100, "100자 이내로 입력해 주세요"), answer: z.string().max(3000, "3,000자 이내로 입력해 주세요") });
 const personCompleteSchema = personSchema.extend({ name: personSchema.shape.name.min(1, "이름을 입력해 주세요") });
 export const photoEditSchema = z.object({
@@ -16,17 +17,18 @@ export type PhotoEdit = z.infer<typeof photoEditSchema>;
 export const cropFormSchema = z.object({ area: photoEditSchema.shape.crop, rotation: photoEditSchema.shape.rotation });
 export type CropFormData = z.infer<typeof cropFormSchema>;
 export const cropDefaultValues: DefaultValues<CropFormData> = { area: { x: 0, y: 0, width: 1, height: 1 }, rotation: 0 };
-export const groupCompleteSchema = z.object({
+export const familyCompleteSchema = z.object({
+  id: z.uuid().nullable().optional(),
   name: z.string().trim().min(1, "이름을 입력해 주세요").max(100, "100자 이내로 입력해 주세요"),
-  photoId: z.uuid().nullable(),
-  photo: z.string().max(7500000, "5MB 이하의 사진을 올려 주세요").refine((value) => value === "" || value.startsWith("https://") || /^data:image\/(png|jpeg|webp);base64,/.test(value), "사진을 다시 올려 주세요"),
-  photoEdit: photoEditSchema.optional(),
-  leader: personCompleteSchema,
+  photo_id: z.uuid().nullable(),
+  photo: z.string().max(7500000, "5MB 이하의 사진을 올려 주세요").refine(value => value === "" || value.startsWith("https://") || /^data:image\/(png|jpeg|webp);base64,/.test(value), "사진을 다시 올려 주세요"),
+  photo_edit: photoEditSchema.nullable(),
+  leader_name: personCompleteSchema.shape.name,
+  leader_answer: personSchema.shape.answer,
   members: z.array(personCompleteSchema).max(30, "순원은 30명까지 입력해 주세요"),
+  position: z.number().int().min(0).max(19).optional(),
 });
-
-export const groupFormSchema = groupCompleteSchema.extend({ name: z.string().trim().max(100, "100자 이내로 입력해 주세요"), leader: personSchema, members: z.array(personSchema).max(30, "순원은 30명까지 입력해 주세요") });
-export const storedGroupSchema = groupFormSchema.omit({ photo: true }).extend({ photoId: z.uuid().nullable().default(null), photoEdit: photoEditSchema.nullish().transform(value => value ?? null) });
-export const familyFormSchema = z.object({ groups: z.array(groupFormSchema).max(20, "순은 20개까지 입력해 주세요") });
-export const familyStoredSchema = z.object({ groups: z.array(storedGroupSchema).max(20) });
+export const familyFormSchema = familyCompleteSchema.extend({ name: personSchema.shape.name, leader_name: personSchema.shape.name, members: z.array(personSchema).max(30, "순원은 30명까지 입력해 주세요") });
+export const familyStoredSchema = familyFormSchema.omit({ photo: true }).extend({ id: z.uuid(), position: z.number().int().min(0).max(19) });
 export type FamilyFormData = z.infer<typeof familyFormSchema>;
+export const saveFamilySchema = z.object({ ref: recordRefSchema.nullable(), values: familyFormSchema.omit({ id: true, position: true }) });

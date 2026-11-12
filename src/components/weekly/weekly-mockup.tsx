@@ -4,7 +4,7 @@ import Link from "next/link";
 import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { loadWeekly, saveWeekly } from "@/features/weekly/actions";
-import { prepareWeeklyPhotos } from "@/features/weekly/client";
+import { prepareWeeklyPhotos, weeklyValuesForSave } from "@/features/weekly/client";
 import { setFormErrors } from "@/lib/form-errors";
 import { invalidInput } from "@/lib/result";
 import { legacyWeeklySchema } from "@/components/bulletins/schemas";
@@ -42,6 +42,8 @@ export function WeeklyMockup() {
   const { state, isMobile } = useSidebar();
   const main = useRef<HTMLElement>(null);
   const navigating = useRef(false);
+  const transitionId = useRef(0);
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [progressOpen, setProgressOpen] = useState(true);
   const [loadingTarget, setLoadingTarget] = useState<{ step: number; view: WeeklyView; pending: boolean } | null>(null);
   const loading = loadingTarget?.pending === true;
@@ -58,7 +60,7 @@ export function WeeklyMockup() {
   const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: weeklyDefaultValues });
   const { reset, setError, clearErrors, getValues, trigger, formState: { errors } } = methods;
   const sections = useWatch({ control: methods.control, name: "sections" });
-  const groups = useWatch({ control: methods.control, name: "groups" });
+  const families = useWatch({ control: methods.control, name: "families" });
   const senders = useWatch({ control: methods.control, name: "senders" }) ?? [];
   const draftKey = editingId ? `${legacyDraftKey}.${editingId}` : legacyDraftKey;
   useEffect(() => {
@@ -95,7 +97,7 @@ export function WeeklyMockup() {
             else setError("root", { message: "이전 입력을 확인해 주세요. 원본은 브라우저에 남아 있어요" });
           }
         }
-        if (editingId) {
+        if (editingId && !stored.current && !loadPendingWeekly(editingId)) {
           const draft = localStorage.getItem(draftKey);
           if (draft) { const parsed = weeklyDraftSchema.safeParse(JSON.parse(draft)); if (parsed.success && parsed.data.date === editingId) reset(parsed.data); }
         }
@@ -110,11 +112,10 @@ export function WeeklyMockup() {
 
   useEffect(() => {
     if (readyFor !== editingId) return;
-    let timer: ReturnType<typeof setTimeout>;
     const unsubscribe = methods.subscribe({ formState: { values: true }, callback: () => {
-      clearTimeout(timer);
+      clearTimeout(draftTimer.current);
       setSavedAt("");
-      timer = setTimeout(() => {
+      draftTimer.current = setTimeout(() => {
         const result = weeklyDraftSchema.safeParse(getValues());
         if (!result.success) return;
         savePendingWeekly(result.data, stored.current?.ref ?? null);
@@ -122,20 +123,14 @@ export function WeeklyMockup() {
         catch { setError("root", { message: "자동 저장하지 못했어요. 저장 공간을 확인해 주세요" }); }
       }, 1000);
     } });
-    return () => { unsubscribe(); clearTimeout(timer); };
+    return () => { unsubscribe(); clearTimeout(draftTimer.current); };
   }, [methods, getValues, readyFor, editingId, draftKey, setError]);
 
-  const navigate = async (nextStep: number, nextView?: WeeklyView, group?: number, card?: number) => {
-    const params = new URLSearchParams({ step: String(nextStep) });
-    if (editingId) params.set("bulletin", editingId);
-    if (nextView && nextView !== "options") params.set("view", nextView);
-    if (group !== undefined) params.set("group", String(group));
-    if (card !== undefined) params.set("card", String(card));
-    const href = `/weekly?${params}`;
-    if (navigating.current || href === window.location.pathname + window.location.search) return;
+  const transitionTo = useCallback(async (nextStep: number, nextView: WeeklyView, commit?: () => void) => {
+    const id = ++transitionId.current;
     navigating.current = true;
     const transitionStartedAt = performance.now();
-    flushSync(() => setLoadingTarget({ step: nextStep, view: nextView ?? "options", pending: true }));
+    flushSync(() => setLoadingTarget({ step: nextStep, view: nextView, pending: true }));
     const animations: Animation[] = [];
     try {
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -144,10 +139,10 @@ export function WeeklyMockup() {
         });
         await Promise.allSettled(animations.map(animation => animation.finished));
       }
-      if (!main.current?.isConnected) return;
+      if (id !== transitionId.current || !main.current?.isConnected) return;
       flushSync(() => {
         main.current?.scrollTo({ top: 0, behavior: "instant" });
-        window.history.pushState(null, "", href);
+        commit?.();
       });
       await new Promise<void>(resolve => window.setTimeout(resolve, 0));
       await document.fonts.ready;
@@ -157,15 +152,39 @@ export function WeeklyMockup() {
       if (remaining) await new Promise(resolve => window.setTimeout(resolve, remaining));
     } finally {
       animations.forEach(animation => animation.cancel());
-      if (main.current?.isConnected) {
-        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (id === transitionId.current) {
+        if (main.current?.isConnected && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           setLoadingTarget(target => target ? { ...target, pending: false } : null);
           await new Promise(resolve => window.setTimeout(resolve, 180));
         }
-        if (main.current?.isConnected) setLoadingTarget(null);
+        if (id === transitionId.current) setLoadingTarget(null);
       }
-      navigating.current = false;
+      if (id === transitionId.current) navigating.current = false;
     }
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (window.location.pathname !== "/weekly") return;
+      const params = new URLSearchParams(window.location.search);
+      const rawStep = params.get("step");
+      const nextStep = rawStep === "3" ? 3 : rawStep === "2" || rawStep === "2-1" ? 2 : 1;
+      const rawView = rawStep === "2-1" ? "sermon" : params.get("view");
+      void transitionTo(nextStep, views.find(value => value === rawView) ?? "options");
+    };
+    window.addEventListener("popstate", onPopState, true);
+    return () => window.removeEventListener("popstate", onPopState, true);
+  }, [transitionTo]);
+
+  const navigate = (nextStep: number, nextView?: WeeklyView, group?: number, card?: number) => {
+    const params = new URLSearchParams({ step: String(nextStep) });
+    if (editingId) params.set("bulletin", editingId);
+    if (nextView && nextView !== "options") params.set("view", nextView);
+    if (group !== undefined) params.set("group", String(group));
+    if (card !== undefined) params.set("card", String(card));
+    const href = `/weekly?${params}`;
+    if (navigating.current || href === window.location.pathname + window.location.search) return;
+    void transitionTo(nextStep, nextView ?? "options", () => window.history.pushState(null, "", href));
   };
   const finishIntro = useCallback(() => window.history.replaceState(null, "", "/weekly?step=1"), []);
   const save = (close = false) => startTransition(async () => {
@@ -182,14 +201,15 @@ export function WeeklyMockup() {
       try { localStorage.setItem(legacyDraftKey, JSON.stringify(parsed.data)); } catch { /* Large images can exceed browser storage; server saving still works. */ }
       const photos = await prepareWeeklyPhotos(parsed.data);
       if (!photos.ok) { setFormErrors(methods, photos.error); toast.error(photos.error.message); return; }
-      photos.data.groups.forEach((group, index) => methods.setValue(`groups.${index}.photoId`, group.photoId));
+      photos.data.families.forEach((group, index) => methods.setValue(`families.${index}.photo_id`, group.photo_id));
       methods.setValue("sermon.thumbnailId", photos.data.sermon.thumbnailId);
       savePendingWeekly(photos.data, stored.current?.ref ?? null);
-      const result = await saveWeekly({ ref: stored.current?.ref ?? null, values: photos.data });
+      const result = await saveWeekly({ ref: stored.current?.ref ?? null, values: weeklyValuesForSave(photos.data) });
       if (!result.ok) { setFormErrors(methods, result.error); toast.error(result.error.message); return; }
       stored.current = result.data;
       savedRef.current = result.data.id;
       reset(result.data.data);
+      clearTimeout(draftTimer.current);
       try { markBulletinMigrated(result.data.id); } catch { /* The saved server record is authoritative. */ }
       clearPendingWeekly(result.data.id);
       toast.success("저장했어요", { description: "팀에서 함께 확인할 수 있어요" });
@@ -226,9 +246,9 @@ export function WeeklyMockup() {
     } else if (view === "sermon") {
       if (await trigger(["sermon.date", "sermon.speaker", "sermon.title", "sermon.bible"])) navigate(2, "sermon-preview");
     } else if (view === "sermon-preview") { if (await trigger("sermon.content")) afterSermon(); }
-    else if (view === "families") { if (await trigger("groups")) navigate(2, "family-preview"); }
+    else if (view === "families") { if (await trigger("families")) navigate(2, "family-preview"); }
     else if (view === "family-edit" || view === "family-card-edit") {
-      if (await trigger(`groups.${groupIndex}`)) navigate(2, view === "family-card-edit" ? "family-preview" : "families");
+      if (await trigger(`families.${groupIndex}`)) navigate(2, view === "family-card-edit" ? "family-preview" : "families");
     } else if (view === "family-preview") afterFamily();
     else if (view === "senders") { if (await trigger("senders")) finishContent(); }
     else if (view === "sender-edit") { if (await trigger(`senders.${senderIndex}`)) navigate(2, "senders"); }
@@ -246,7 +266,7 @@ export function WeeklyMockup() {
     else navigate(2);
   };
   const groupParam = Number(search.get("group") ?? 0);
-  const groupIndex = Number.isInteger(groupParam) && groupParam >= 0 && groupParam < groups.length ? groupParam : 0;
+  const groupIndex = Number.isInteger(groupParam) && groupParam >= 0 && groupParam < families.length ? groupParam : 0;
   const senderIndex = Number.isInteger(groupParam) && groupParam >= 0 && groupParam < senders.length ? groupParam : 0;
   const cardParam = Number(search.get("card") ?? 0);
   const editingEntry = view === "family-edit" || view === "family-card-edit" || view === "sender-edit";
@@ -268,7 +288,7 @@ export function WeeklyMockup() {
       <WeeklyHeading step={view === "options" && step === 2 ? 1 : step} title={title} contentKey={transitionKey} description={step === 1 ? editingId ? "저장된 주보의 발행일이에요" : "발행일(주일) 기준으로 주차가 자동 계산돼요" : undefined} />
       <div className="weekly-content-frame" data-loading={loading} aria-busy={loadingTarget !== null}>
           <div key={transitionKey} className="weekly-content weekly-page-enter" inert={loading} aria-hidden={loading}>
-            {step === 1 ? <PublishDate lockedDate={editingId ?? undefined} /> : step === 3 ? <WeeklyResults /> : view === "options" ? <Configuration /> : view === "sermon" || view === "sermon-preview" ? <SermonEditor preview={view === "sermon-preview"} /> : view === "families" ? <FamilyList onEdit={index => navigate(2, "family-edit", index)} /> : view === "family-edit" && groups.length ? <FamilyEditor index={groupIndex} /> : view === "family-card-edit" && groups.length ? <FamilyCardEditor index={groupIndex} initialPage={Number.isInteger(cardParam) && cardParam >= 0 ? cardParam : 0} /> : view === "family-preview" ? <FamilyPreview onEdit={(index, card) => navigate(2, card === undefined ? "family-edit" : "family-card-edit", index, card)} /> : view === "senders" ? <SenderList onEdit={index => navigate(2, "sender-edit", index)} /> : view === "sender-edit" && senders.length ? <SenderEditor index={senderIndex} count={senders.length} onNavigate={index => navigate(2, "sender-edit", index)} /> : <Configuration />}
+            {step === 1 ? <PublishDate lockedDate={editingId ?? undefined} /> : step === 3 ? <WeeklyResults /> : view === "options" ? <Configuration /> : view === "sermon" || view === "sermon-preview" ? <SermonEditor preview={view === "sermon-preview"} /> : view === "families" ? <FamilyList onEdit={index => navigate(2, "family-edit", index)} /> : view === "family-edit" && families.length ? <FamilyEditor index={groupIndex} /> : view === "family-card-edit" && families.length ? <FamilyCardEditor index={groupIndex} initialPage={Number.isInteger(cardParam) && cardParam >= 0 ? cardParam : 0} /> : view === "family-preview" ? <FamilyPreview onEdit={(index, card) => navigate(2, card === undefined ? "family-edit" : "family-card-edit", index, card)} /> : view === "senders" ? <SenderList onEdit={index => navigate(2, "sender-edit", index)} /> : view === "sender-edit" && senders.length ? <SenderEditor index={senderIndex} count={senders.length} onNavigate={index => navigate(2, "sender-edit", index)} /> : <Configuration />}
 
           </div>
           {loadingTarget && <div className="weekly-skeleton-layer" aria-hidden={!loading}>

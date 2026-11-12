@@ -7,7 +7,7 @@ import { CroppedPhoto } from "./photo-crop";
 import { newFamily, type WeeklyFormData } from "./schemas";
 
 const asset = "/images/weekly/";
-export function familyPageCount(group: WeeklyFormData["groups"][number]) {
+export function familyPageCount(group: WeeklyFormData["families"][number]) {
   return Math.max(4, 2 + Math.ceil((group.members.length + 1) / 3));
 }
 
@@ -65,8 +65,8 @@ export function SermonCard({ index }: { index: number }) {
 
 export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupIndex?: number }) {
   const { control } = useFormContext<WeeklyFormData>();
-  const group = useWatch({ control, name: `groups.${groupIndex}` }) ?? newFamily(0);
-  const people = [group.leader, ...group.members];
+  const group = useWatch({ control, name: `families.${groupIndex}` }) ?? newFamily(0);
+  const people = [{ name: group.leader_name, answer: group.leader_answer }, ...group.members];
   const visiblePeople = people.slice((index - 2) * 3, (index - 1) * 3);
   return <CardFrame family label={`새가족 문답 ${index === 0 ? "표지" : `${index + 1}페이지`}`}>
     {index === 0 ? <>
@@ -74,7 +74,7 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
       <text x="150" y="55" textAnchor="middle" fill="var(--family-green)" fontSize="28.8" fontFamily="Georgia, serif" fontWeight="bold">NEW FAMILY</text>
       <image href={`${asset}f5cdb.svg`} x="24" y="73" width="252" height="85.5" /><text x="150" y="148" textAnchor="middle" fill="var(--art-white)" fontSize="9.6" fontWeight="bold">({group.name})</text>
       <rect x="24" y="158.5" width="252" height="156" fill="var(--family-brown)" /><rect x="31" y="165" width="238" height="142" fill="var(--family-photo)" />
-      {group.photo ? <CroppedPhoto source={group.photo} edit={group.photoEdit} x={31} y={165} width={238} height={142} label="순 단체사진" /> : <text x="150" y="292" textAnchor="middle" fill="var(--art-white)" fontSize="6" opacity="0.5">순 단체사진</text>}
+      {group.photo ? <CroppedPhoto source={group.photo} edit={group.photo_edit} x={31} y={165} width={238} height={142} label="순 단체사진" /> : <text x="150" y="292" textAnchor="middle" fill="var(--art-white)" fontSize="6" opacity="0.5">순 단체사진</text>}
       <path d="M24 322H276" stroke="var(--family-brown)" strokeWidth="1.2" /><text x="150" y="339" textAnchor="middle" fill="var(--family-brown)" fontSize="8" fontWeight="bold">{people.map((person) => person.name).join(" | ")}</text>
     </> : <>
       <image href={`${asset}94075.svg`} x="129" y="18" width="42" height="14.25" /><text x="150" y="54" textAnchor="middle" fill="var(--family-brown)" fontSize="13.8" fontFamily="serif" fontWeight="bold">( 허브 ) 가 좋은 이유 ?</text>

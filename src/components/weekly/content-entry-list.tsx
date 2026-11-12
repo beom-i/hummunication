@@ -10,7 +10,7 @@ import { CroppedPhoto } from "./photo-crop";
 import type { PhotoEdit } from "./schemas";
 
 export function ContentEntryList({ entries, kind, onEdit, onAdd, onRemove }: {
-  entries: { id: string; name: string; photo?: string; photoEdit?: PhotoEdit }[];
+  entries: { id: string; name: string; photo?: string; photoEdit?: PhotoEdit | null }[];
   kind: "순" | "파송자"; onEdit: (index: number) => void; onAdd: () => void; onRemove: (index: number) => void;
 }) {
   const { state, isMobile } = useSidebar();

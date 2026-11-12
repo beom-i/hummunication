@@ -10,8 +10,8 @@ export async function getSender(input: unknown): Promise<Result<Sender>> {
   return withUser(async db => {
     const { data, error } = await db.rpc("get_sender", { p_id: id.data });
     if (error) return databaseFailure(error);
-    const stored = senderSchema.extend({ people: z.array(senderSchema.shape.people.element.extend({ date: z.iso.date().nullable() })) }).safeParse(data);
+    const stored = senderSchema.extend({ date: z.iso.date().nullable() }).safeParse(data);
     if (!stored.success) return failure("INTERNAL_ERROR", "저장된 파송자를 확인해 주세요");
-    return { ok: true, data: { ...stored.data, people: stored.data.people.map(person => ({ ...person, date: person.date ?? "" })) } };
+    return { ok: true, data: { ...stored.data, date: stored.data.date ?? "" } };
   });
 }

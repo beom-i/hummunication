@@ -35,7 +35,7 @@ export function SenderList({ onEdit }: { onEdit: (index: number) => void }) {
 export function SenderEditor({ index, onNavigate, count }: { index: number; onNavigate: (index: number) => void; count: number }) {
   const { register, formState: { errors } } = useFormContext<WeeklyFormData>();
   const senderErrors = errors.senders?.[index];
-  const fields = [{ name: "name", label: "이름", placeholder: "이름을 입력해 주세요" }, { name: "generation", label: "기수", placeholder: "숫자를 입력해 주세요" }, { name: "group", label: "소속 순", placeholder: "그룹 / 다락방 / 순" }, { name: "date", label: "파송 날짜", placeholder: "날짜를 입력해 주세요" }] as const;
+  const fields = [{ name: "name", label: "이름", placeholder: "이름을 입력해 주세요" }, { name: "generation", label: "기수", placeholder: "숫자를 입력해 주세요" }, { name: "group_name", label: "소속 순", placeholder: "그룹 / 다락방 / 순" }, { name: "date", label: "파송 날짜", placeholder: "날짜를 입력해 주세요" }] as const;
   return <div className="weekly-centered family-detail-layout mx-auto mt-[60px] w-full max-w-[1112px]">
     <section className="rounded-2xl border bg-card p-5" aria-label="파송자 카드뉴스 미리보기"><h2 className="mb-4 text-base font-bold">카드뉴스 미리보기</h2><div className="relative px-14"><Button variant="outline" size="icon-lg" className="preview-nav left-0 rounded-full" aria-label="이전 파송자" disabled={index === 0} onClick={() => onNavigate(index - 1)}><ChevronLeft /></Button><SenderCard index={index} /><Button variant="outline" size="icon-lg" className="preview-nav right-0 rounded-full" aria-label="다음 파송자" disabled={index + 1 >= count} onClick={() => onNavigate(index + 1)}><ChevronRight /></Button></div></section>
     <section className="family-form-card flex flex-col gap-6" aria-label="파송자 정보 입력">
