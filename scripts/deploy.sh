@@ -19,7 +19,7 @@ head_sha="$(git rev-parse HEAD)"
 git fetch origin main
 if [[ -n "$(git diff --name-only origin/main...HEAD -- supabase/migrations/)" ]]; then
   printf '운영 DB 마이그레이션 이력 확인 (읽기 전용)\n'
-  pnpm exec supabase db push --remote --dry-run --skip-vault | node scripts/check-applied-migrations.mjs
+  pnpm exec supabase db push --remote --dry-run --skip-vault --output-format json | node scripts/check-applied-migrations.mjs
 fi
 printf '배포 대상: %s / %s / %s\n' "$repo" "$branch" "$head_sha"
 
