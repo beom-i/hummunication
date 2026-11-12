@@ -24,7 +24,7 @@
 
 ## 운영 적용
 
-새 migration은 `supabase/migrations/20261113010000_photo_workflow.sql`과 `20261113020000_family_template_photo_ratio.sql`이다. 먼저 DB에 반영하고 해당 앱 코드를 배포한다. 이미 적용한 이전 migration은 수정하지 않았다.
+새 migration은 `supabase/migrations/20261113010000_photo_workflow.sql`과 `20261113020000_family_template_photo_ratio.sql`이다. 2026-11-13 운영 DB에 두 파일을 적용했고, 후속 dry-run에서 미적용 migration이 없음을 확인했다. 새 컬럼·RLS·service_role 전용 정리 권한도 운영 스키마에서 읽기 전용으로 확인했다. 이미 적용한 이전 migration은 수정하지 않았다. 앱 코드는 아직 웹 배포 전이다.
 
 Vercel Production 환경변수에 다음 이름을 등록해야 일일 정리가 활성화된다. 실제 값은 이 문서·코드·채팅에 기록하지 않는다.
 

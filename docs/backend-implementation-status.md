@@ -59,12 +59,14 @@ src/features/{weekly,sermon,family,sender,files}에서 도메인별 스키마·�
 
 실제 팀원 계정으로 브라우저 저장·사진 업로드가 성공하는 전체 경로는 추가 확인이 필요하다. 현재 단계의 저장·권한 동작은 로컬 통합 테스트로 검증했다. 1440/820/390px 화면 전환·뒤로가기·모션 감소 설정도 통과했다. 이번 브라우저 검증에서 families 순장 이름의 길이 오류, 순장·순원 답변의 카드 반영, 비로그인 저장 실패 알림과 입력 유지도 확인했다.
 
-## 사진 공통화 · 2026-11-13 개발, 운영 미반영
+## 사진 공통화 · 2026-11-13 운영 DB 적용, 웹 배포 대기
 
 새 migration `20261113010000_photo_workflow.sql`을 추가했다. family.photo_edit 품질 설정, sermon.thumbnail_edit, files.purged_at, 교체 후 미사용 파일 삭제 대기와 service_role 전용 정리 RPC를 포함한다. 기존 운영 migration은 수정하지 않았다.
 
 공통 PhotoField·편집 모달에서 원본은 유지하고 편집값만 바꾸며, 미리보기와 다운로드가 같은 출력을 사용한다. 저장 실패 시 기존 파일과 연결은 유지한다. 새 스키마에서 로컬 저장·조회·롤백·공유 참조·파일 정리 권한 및 동시 저장과 정리 경합을 검증했다.
 
-실파일 정리는 Vercel 일일 Cron과 서버 전용 환경변수 설정 후 작동한다. 아직 운영 DB 적용·배포·운영 파일 삭제를 수행하지 않았다. [운영 적용과 검증 방법](photo-workflow.md).
+20261113010000_photo_workflow.sql과 20261113020000_family_template_photo_ratio.sql을 운영 DB에 적용했다. 후속 dry-run의 미적용 migration은 0개다. thumbnail_edit·purged_at, 기존 다섯 테이블 RLS, service_role 정리 허용과 anon·authenticated 정리 RPC 차단을 읽기 전용으로 재확인했다. 운영 콘텐츠·파일을 테스트로 생성하거나 삭제하지 않았다.
+
+실파일 정리는 Vercel 일일 Cron과 서버 전용 환경변수 설정 후 작동한다. 앱 코드의 원격 push는 사용자 PreToolUse hook의 git push 금지로 중단돼 웹 배포는 아직 진행하지 못했다. Vercel 운영 환경에 SUPABASE_SECRET_KEY·CRON_SECRET 등록도 필요하다. [운영 적용과 검증 방법](photo-workflow.md).
 
 배포 전 전체 변경 검토에서 저장 중 편집 덮어쓰기, 복구 사진 URL 만료, 카드뉴스 메뉴 오이동, 홈 날짜에 적용되는 템플릿 CSS를 수정했다. 저장 중 입력 잠금·실패 후 입력 유지·메뉴 안내·홈 날짜 스타일은 브라우저에서 확인했고, URL 복구는 동일 파일 ID와 새 로컬 원본 보존 테스트로 검증했다. lint·typecheck·전체 로컬 테스트·운영 빌드가 통과했다. 운영 자동 정리용 환경변수 두 개는 배포 시 별도로 확인한다.

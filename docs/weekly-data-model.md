@@ -1,6 +1,6 @@
 # 주보 데이터 구조
 
-2026-11-13 · 현재 코드. 사진 편집·정리 migration은 운영 미반영이며 [적용 절차](photo-workflow.md)를 따른다. 운영 반영 이력과 웹 배포 상태는 [적용 상태](backend-implementation-status.md)에서 확인한다.
+2026-11-13 · 사진 편집·정리 migration은 운영 DB에 적용했다. 앱 코드의 웹 배포는 대기 중이다. [적용 절차](photo-workflow.md)와 [DB·웹 적용 상태](backend-implementation-status.md)를 구분해서 확인한다.
 
 ```text
 weekly
