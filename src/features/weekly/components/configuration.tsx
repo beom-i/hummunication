@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { sectionOptions, type WeeklyFormData } from "../schemas";
 import { BulletinCard } from "@/features/weekly/templates/bulletin-card";
 import { FamilyCard } from "@/features/weekly/templates/family-card";
@@ -10,7 +10,7 @@ import { SermonCard } from "@/features/weekly/templates/sermon-card";
 import { SenderCard } from "../templates/sender-card";
 
 export function Configuration() {
-  const { control, register, formState: { errors } } = useFormContext<WeeklyFormData>();
+  const { control, register } = useFormContext<WeeklyFormData>();
   const selected = useWatch({ control, name: "sections" });
   const cards = [<BulletinCard key="thumbnail" artwork />, <BulletinCard key="cover" cover />, <SermonCard key="sermon" index={0} />, <FamilyCard key="family" index={0} />, <SenderCard key="senders" index={0} />];
   return (
@@ -37,7 +37,6 @@ export function Configuration() {
           </Field>
         ))}
       </div>
-      <FieldError errors={[errors.sections]} />
     </fieldset>
   );
 }

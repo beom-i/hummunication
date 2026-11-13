@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import "./publish-dates.mjs";
+import "./weekly-feedback.mjs";
 import { weeklyLocation, weeklyHref, weeklyIndicatorStep, weeklyHeading, firstContentView, boundedEntryIndex } from "../src/features/weekly/utils/workflow.ts";
 import { sidebarOffset } from "../src/features/workspace/utils/sidebar-offset.ts";
 

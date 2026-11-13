@@ -1,4 +1,5 @@
 .weekly-workspace { --progress-duration: 360ms; --progress-ease: cubic-bezier(0.22, 1, 0.36, 1); }
+.weekly-workspace:has(#weekly-form-errors) { padding-bottom: 300px; scroll-padding-bottom: 300px; }
 .weekly-workspace .weekly-content { flex-shrink: 0; }
 .weekly-heading { flex-shrink: 0; }
 .weekly-sermon-layout { width: calc(100% - 176px); max-width: 1200px; transition: padding-right var(--progress-duration) var(--progress-ease); }
@@ -69,8 +70,6 @@
 .sermon-list-stage { position: relative; padding: 28px 24px; }
 .sermon-list-card { width: min(100%, 300px); margin-inline: auto; }
 .weekly-workspace .rich-editor { border: 0; background: var(--muted); }
-.weekly-workspace .rich-editor [role="toolbar"] { opacity: 0; max-height: 0; overflow: hidden; padding: 0 8px; border: 0; transition: max-height 180ms, padding 180ms, opacity 180ms; }
-.weekly-workspace .rich-editor:focus-within [role="toolbar"] { opacity: 1; max-height: 100px; padding-block: 8px; }
 .weekly-workspace .rich-editor-content { min-height: 538px; padding: 16px; }
 .family-form-card { width: 100%; padding: 28px 24px; border: 1px solid var(--border); border-radius: 24px; background: var(--card); }
 .family-form-card [data-slot="field-label"] { font-size: 18px; font-weight: 700; }

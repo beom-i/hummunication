@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { loadWeekly, saveWeekly } from "@/features/weekly/actions";
 import { prepareWeeklyPhotos, weeklyValuesForSave, refreshRecoveredPhotos } from "@/features/weekly/client";
 import { setFormErrors } from "@/lib/form-errors";
-import { invalidInput } from "@/lib/result";
+import { invalidInput, type AppError } from "@/lib/result";
 import { legacyWeeklySchema } from "@/features/bulletins/schemas";
 import type { WeeklyRecord } from "@/features/weekly/schemas";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
@@ -27,7 +27,8 @@ import { ProgressSidebar } from "./progress-sidebar";
 import { useWeeklyTransition } from "../hooks/use-weekly-transition";
 import { weeklyHeading, weeklyLocation, weeklyIndicatorStep, boundedEntryIndex } from "../utils/workflow";
 import { sidebarOffset } from "@/features/workspace/utils/sidebar-offset";
-import { upcomingPublishDates } from "../utils/publish-dates";
+import { initialWeeklyValues } from "../utils/initial-values";
+import { WeeklyFormErrors } from "./weekly-form-errors";
 import { WeeklyStepContent } from "./weekly-step-content";
 import "./weekly-workspace.css";
 import { weeklyDefaultValues, weeklyDraftSchema, weeklySchema, type WeeklyFormData } from "../schemas";
@@ -40,7 +41,6 @@ export function WeeklyWorkspace() {
   const main = useRef<HTMLElement>(null);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [progressOpen, setProgressOpen] = useState(true);
-  const [savedAt, setSavedAt] = useState("");
   const [pending, startTransition] = useTransition();
   const editingId = search.get("bulletin");
   const [readyFor, setReadyFor] = useState<string | null | undefined>(undefined);
@@ -80,9 +80,7 @@ export function WeeklyWorkspace() {
             else { setError("root", { type: "load", message: result.error.message }); reportServerError(result.error); }
           }
         } else {
-          const dates = upcomingPublishDates();
-          const date = dates[1];
-          let values = { ...weeklyDefaultValues, date, sermon: { ...weeklyDefaultValues.sermon, date } };
+          let values = initialWeeklyValues();
           let invalidDraft = false;
           const saved = localStorage.getItem(legacyDraftKey);
           if (saved) {
@@ -90,8 +88,7 @@ export function WeeklyWorkspace() {
             try { parsed = JSON.parse(saved); } catch { parsed = null; }
             const result = legacyWeeklySchema.safeParse(parsed);
             if (result.success) {
-              values = result.data;
-              if (!dates.includes(result.data.date)) values = { ...result.data, date, sermon: { ...result.data.sermon, date } };
+              values = initialWeeklyValues(result.data);
             }
             else invalidDraft = true;
           }
@@ -118,25 +115,28 @@ export function WeeklyWorkspace() {
     if (readyFor !== editingId) return;
     const unsubscribe = methods.subscribe({ formState: { values: true }, callback: () => {
       clearTimeout(draftTimer.current);
-      setSavedAt("");
       draftTimer.current = setTimeout(() => {
         const result = weeklyDraftSchema.safeParse(getValues());
         if (!result.success) return;
         savePendingWeekly(result.data, stored.current?.ref ?? null);
-        try { localStorage.setItem(draftKey, JSON.stringify(result.data)); setSavedAt(new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false })); }
+        try { localStorage.setItem(draftKey, JSON.stringify(result.data)); }
         catch { setError("root", { message: "자동 저장하지 못했어요. 저장 공간을 확인해 주세요" }); }
       }, 1000);
     } });
     return () => { unsubscribe(); clearTimeout(draftTimer.current); };
   }, [methods, getValues, readyFor, editingId, draftKey, setError]);
 
+  const showSaveError = (error: AppError) => {
+    setFormErrors(methods, error);
+    if (error.code === "UNAUTHORIZED") reportServerError(error);
+  };
   const finishIntro = useCallback(() => window.history.replaceState(null, "", "/weekly?step=1"), []);
   const save = (close = false) => startTransition(async () => {
     clearErrors();
     const parsed = weeklyDraftSchema.safeParse(getValues());
     if (!parsed.success) {
       const error = invalidInput(parsed.error);
-      if (!error.ok) { setFormErrors(methods, error.error); toast.error(error.error.message); }
+      if (!error.ok) { showSaveError(error.error); }
       return;
     }
     try {
@@ -144,12 +144,12 @@ export function WeeklyWorkspace() {
       savePendingWeekly(parsed.data, stored.current?.ref ?? null);
       try { localStorage.setItem(legacyDraftKey, JSON.stringify(parsed.data)); } catch { /* Large images can exceed browser storage; server saving still works. */ }
       const photos = await prepareWeeklyPhotos(parsed.data);
-      if (!photos.ok) { setFormErrors(methods, photos.error); reportServerError(photos.error); return; }
+      if (!photos.ok) { showSaveError(photos.error); return; }
       photos.data.families.forEach((group, index) => methods.setValue(`families.${index}.photo_id`, group.photo_id));
       methods.setValue("sermon.thumbnailId", photos.data.sermon.thumbnailId);
       savePendingWeekly(photos.data, stored.current?.ref ?? null);
       const result = await saveWeekly({ ref: stored.current?.ref ?? null, values: weeklyValuesForSave(photos.data) });
-      if (!result.ok) { setFormErrors(methods, result.error); reportServerError(result.error); return; }
+      if (!result.ok) { showSaveError(result.error); return; }
       stored.current = result.data;
       savedRef.current = result.data.id;
       reset(result.data.data);
@@ -168,7 +168,7 @@ export function WeeklyWorkspace() {
       }
     } catch {
       const message = "저장 결과와 연결을 확인해 주세요. 현재 입력은 유지됩니다";
-      setError("root", { type: "server", message }); toast.error(message);
+      setError("root", { type: "server", message });
     }
   });
   const finishContent = () => navigate(3);
@@ -248,12 +248,7 @@ export function WeeklyWorkspace() {
           </div>}
           {loading && <span role="status" className="sr-only">화면을 불러오는 중이에요</span>}
       </div>
-      {errors.root && <div className="mx-auto my-4 w-full max-w-[680px] rounded-xl border border-destructive/20 bg-card p-4" aria-live="polite">
-        <FieldError errors={[errors.root]} />
-        {errors.root.type === "CONFLICT" && errors.date && <Button asChild variant="link" className="mt-2 h-auto p-0"><Link target="_blank" rel="noreferrer" href={bulletinHref(getValues("date"))}>저장된 주보 열기</Link></Button>}
-      </div>}
-      {step === 2 && view !== "options" && <p className="weekly-draft-status px-5 py-3 text-center text-xs text-muted-foreground" aria-live="polite">{savedAt ? `이 브라우저에 보관됨 ${savedAt}` : "입력 내용은 이 브라우저에 보관돼요"}</p>}
-      <WeeklyFooter nextDisabled={step === 2 && view === "options" && !sections.length} onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={nextLabel} />
+      <WeeklyFooter feedback={<WeeklyFormErrors errors={errors} date={getValues("date")} />} nextDisabled={step === 2 && view === "options" && !sections.length} onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={nextLabel} />
       </main>
       </CardPagesProvider></SermonPagesProvider>
     </FormProvider>
