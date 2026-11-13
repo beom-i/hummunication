@@ -2,21 +2,18 @@
 
 import { bulletinTitle } from "@/features/bulletins/utils/format";
 import Image from "next/image";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import type { WeeklyFormData } from "../schemas";
-
-// shortcut: Figma의 고정 날짜를 사용하며, 실제 발행 연결 시 주일 목록으로 교체한다.
-const publishDates = [
-  { value: "2026-11-08", label: "11월 8일 (주일)", week: "11월 둘째주" },
-  { value: "2026-11-15", label: "11월 15일 (주일)", week: "11월 셋째주" },
-  { value: "2026-11-22", label: "11월 22일 (주일)", week: "11월 넷째주" },
-  { value: "2026-11-29", label: "11월 29일 (주일)", week: "11월 다섯째주" },
-] as const;
+import { upcomingPublishDates } from "../utils/publish-dates";
 
 export function PublishDate({ lockedDate }: { lockedDate?: string }) {
-  const options = lockedDate ? [{ value: lockedDate, label: `${Number(lockedDate.slice(5, 7))}월 ${Number(lockedDate.slice(-2))}일`, week: bulletinTitle(lockedDate).replace(" 주보", "") }] : publishDates;
-  const { register, formState: { errors } } = useFormContext<WeeklyFormData>();
+  const { register, control, formState: { errors } } = useFormContext<WeeklyFormData>();
+  const selected = useWatch({ control, name: "date" });
+  let dates = upcomingPublishDates();
+  if (lockedDate) dates = [lockedDate];
+  else if (selected && !dates.includes(selected)) dates = [selected, ...dates];
+  const options = dates.map(value => ({ value, label: `${Number(value.slice(5, 7))}월 ${Number(value.slice(-2))}일${lockedDate ? "" : " (주일)"}`, week: bulletinTitle(value).replace(" 주보", "") }));
 
   return (
     <section className="mx-auto mt-[62px] w-full max-w-[528px] px-6 max-md:mt-12">
