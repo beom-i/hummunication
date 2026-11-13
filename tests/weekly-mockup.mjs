@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
 import { paginateCardRows } from "../src/features/weekly/utils/card-pagination.ts";
-import { weeklyDraftSchema, weeklySchema, weeklyDefaultValues } from "../src/features/weekly/schemas.ts";
+import { weeklyDraftSchema, weeklySchema, weeklyDefaultValues, sectionOptions, newFamily } from "../src/features/weekly/schemas.ts";
+import { documentText } from "../src/components/ui/rich-text-editor/schemas.ts";
 
-const draft = weeklyDraftSchema.parse(weeklyDefaultValues);
+const draft = weeklyDraftSchema.parse({ ...weeklyDefaultValues, date: "2035-01-07", sermon: { ...weeklyDefaultValues.sermon, date: "2035-01-07" } });
+assert.deepEqual(draft.sections, sectionOptions.map(option => option.value), "All five output types must start selected");
+assert.equal(weeklyDefaultValues.date, "", "Publication dates must be initialized from the current Korean week, never a mock date");
+assert.deepEqual([draft.sermon.speaker, draft.sermon.title, draft.sermon.bible, documentText(draft.sermon.content), draft.sermonThumbnail], ["", "", "", "", ""]);
+assert.equal(weeklySchema.safeParse(draft).success, false, "A new bulletin must require user content before export");
+for (const family of [draft.families[0], newFamily()]) {
+  assert.deepEqual([family.name, family.leader_name, family.leader_answer, family.photo], ["", "", "", ""]);
+  assert.deepEqual(family.members, [{ name: "", answer: "" }], "New and added groups must contain an empty input row, never example names");
+}
 assert.equal(weeklyDraftSchema.safeParse({ ...draft, sections: [] }).success, true);
 assert.equal(weeklySchema.safeParse({ ...draft, sections: [] }).success, false);
 

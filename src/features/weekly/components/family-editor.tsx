@@ -19,7 +19,7 @@ export function FamilyList({ onEdit }: { onEdit: (index: number) => void }) {
   const { control, formState: { errors } } = useFormContext<WeeklyFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: "families" });
   const families = useWatch({ control, name: "families" });
-  return <><ContentEntryList entries={fields.map((field, index) => ({ id: field.id, name: families[index]?.name ?? "", photo: families[index]?.photo, photoEdit: families[index]?.photo_edit }))} kind="순" onEdit={onEdit} onRemove={remove} onAdd={() => { append({ ...newFamily(fields.length), name: "" }, { shouldFocus: false }); onEdit(fields.length); }} /><div className="mx-auto mt-4 max-w-[438px]"><FieldError errors={[errors.families?.root, ...families.map((_, index) => errors.families?.[index]?.name)]} /></div></>;
+  return <><ContentEntryList entries={fields.map((field, index) => ({ id: field.id, name: families[index]?.name ?? "", photo: families[index]?.photo, photoEdit: families[index]?.photo_edit }))} kind="순" onEdit={onEdit} onRemove={remove} onAdd={() => { append(newFamily(), { shouldFocus: false }); onEdit(fields.length); }} /><div className="mx-auto mt-4 max-w-[438px]"><FieldError errors={[errors.families?.root, ...families.map((_, index) => errors.families?.[index]?.name)]} /></div></>;
 }
 
 function FamilyFields({ index }: { index: number }) {
@@ -58,7 +58,7 @@ function FamilyFields({ index }: { index: number }) {
       <FieldError errors={[groupErrors?.members?.[memberIndex]?.name, groupErrors?.members?.[memberIndex]?.answer]} />
     </div>)}
     </div>
-    <Button variant="outline" disabled={fields.length >= 30} className="h-10 gap-2 self-center rounded-full border-dashed px-4 text-base font-bold" onClick={() => append({ name: `순원 ${fields.length + 1}`, answer: "" })}>순원 추가하기<Image src="/images/weekly/5d700.svg" alt="" width={20} height={20} /></Button>
+    <Button variant="outline" disabled={fields.length >= 30} className="h-10 gap-2 self-center rounded-full border-dashed px-4 text-base font-bold" onClick={() => append({ name: "", answer: "" })}>순원 추가하기<Image src="/images/weekly/5d700.svg" alt="" width={20} height={20} /></Button>
   </section>;
 }
 
