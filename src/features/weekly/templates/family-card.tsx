@@ -10,7 +10,7 @@ import { CardTextRows, useCardPages } from "./card-pages";
 
 export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupIndex?: number }) {
   const { control } = useFormContext<WeeklyFormData>();
-  const group = useWatch({ control, name: `families.${groupIndex}` }) ?? newFamily(0);
+  const group = useWatch({ control, name: `families.${groupIndex}` }) ?? newFamily();
   const date = useWatch({ control, name: "date" });
   const { families } = useCardPages();
   const people = [{ name: group.leader_name }, ...group.members];
@@ -41,7 +41,7 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
     content = <>
       <TemplateAsset name="family-photo-heading.svg" x={32.39794921875} y={32.869991302490234} width={656} height={87} />
       <TemplateAsset name="6f2c6.svg" x={51.863} y={186} width={615.19} height={232} />
-      <p className="family-photo-group" data-fit-width data-fit-text>( {group.name} )</p>
+      <p className="family-photo-group" data-fit-width data-fit-text>{group.name && `( ${group.name} )`}</p>
       <svg className="family-photo-image" width="588" height="331" viewBox="0 0 588 331">{group.photo && <CroppedPhoto source={group.photo} edit={group.photo_edit} aspect={16 / 9} width={588} height={331} label="순 단체사진" />}</svg>
       <TemplateAsset name="3bdbb.svg" x={0} y={740} width={720} height={2} />
       <p className="family-photo-names" data-fit-height="60" data-fit-text>{people.map(person => person.name).filter(Boolean).map((name, index) => <Fragment key={index}>{index > 0 && <span aria-hidden="true">ㅣ</span>}<span>{name}</span></Fragment>)}</p>

@@ -11,7 +11,7 @@ export function SenderCard({ index, page = 0 }: { index: number; page?: number }
   const { senders } = useCardPages();
   return <TemplateFrame label="파송자 카드뉴스" className="sender-card">
     <TemplateAsset name="sender-art.png" x={0} y={0} width={720} height={900} />
-    <p className="sender-card-name" data-fit-width data-fit-text>{sender?.generation && `${sender.generation}기 `}{sender?.name || "이름"}</p>
+    <p className="sender-card-name" data-fit-width data-fit-text>{sender?.generation && `${sender.generation}기 `}{sender?.name}</p>
     <div className="sender-card-prayers"><CardTextRows rows={senders[index]?.[page] ?? []} /></div>
   </TemplateFrame>;
 }
