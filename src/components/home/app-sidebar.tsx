@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import "./sidebar-motion.css";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
-  SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton,
+  SidebarHeader, SidebarMenu, SidebarMenuButton,
   SidebarMenuItem, SidebarRail, useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -69,7 +69,6 @@ export function AppSidebar({ active = "home", onHome, onCardNews, onTeam }: {
                 className="rounded-lg font-bold">
                 <NavigationIcon name="card-news" /><span className="shrink-0 whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">카드뉴스 만들기</span>
               </SidebarMenuButton>
-              <SidebarMenuBadge aria-hidden={collapsed} className="right-2 transition-opacity duration-200 group-data-[collapsible=icon]:block group-data-[collapsible=icon]:opacity-0">2</SidebarMenuBadge>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
