@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loginHref, sessionError } from "@/features/auth/utils/session";
+import { Spinner } from "@/components/ui/spinner";
 import { workspaceFont } from "@/features/workspace/fonts";
 import { WorkspaceStartup } from "@/features/workspace/components/workspace-startup";
 
@@ -31,9 +32,9 @@ async function AuthenticatedWorkspace({ children }: { children: React.ReactNode 
   let name = "팀원";
   if (typeof displayName === "string" && displayName.trim()) name = displayName.trim();
   const profile = { name, email: String(claims.email ?? "") };
-  return <WorkspaceShell profile={profile}>{children}</WorkspaceShell>;
+  return <WorkspaceStartup><WorkspaceShell profile={profile}>{children}</WorkspaceShell></WorkspaceStartup>;
 }
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`home-theme min-h-svh ${workspaceFont.variable} ${pretendard.variable} ${katibeh.variable} ${hand.variable}`}><WorkspaceStartup><Suspense fallback={null}><AuthenticatedWorkspace>{children}</AuthenticatedWorkspace></Suspense></WorkspaceStartup></div>;
+  return <div className={`home-theme min-h-svh ${workspaceFont.variable} ${pretendard.variable} ${katibeh.variable} ${hand.variable}`}><Suspense fallback={<main className="flex min-h-svh items-center justify-center" aria-busy="true"><Spinner className="size-6" aria-label="불러오는 중" /></main>}><AuthenticatedWorkspace>{children}</AuthenticatedWorkspace></Suspense></div>;
 }

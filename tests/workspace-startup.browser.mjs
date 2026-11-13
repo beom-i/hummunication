@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 export async function verifyWorkspaceStartup(page, origin) {
   const response = await page.fetch(new URL("/home", origin).href);
   assert.equal(response.status, 200);
-  assert.equal(response.body.includes("로그인 상태를 확인하고 있어요"), false, "App startup must use HU/CU instead of the temporary auth spinner");
+  assert.equal(response.body.includes("로그인 상태를 확인하고 있어요"), false, "Authentication loading must not display session inspection copy");
+  const shell = response.body.match(/<main\b[^>]*aria-busy="true"[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
+  assert.ok(shell.includes('data-slot="spinner"'), "Authentication fallback must render a spinner");
+  assert.equal(shell.includes('class="entry-splash'), false, "HU/CU must wait until authentication completes");
   const { identifier } = await page.cdp("Page.addScriptToEvaluateOnNewDocument", { source: `
     window.__startupSplashes = 0;
     const seen = new WeakSet();
@@ -18,7 +21,7 @@ export async function verifyWorkspaceStartup(page, origin) {
   try {
     await page.goto(new URL("/home", origin).href, { timeout: 60000 });
     await page.waitForFunction(() => window.__startupSplashes > 0 && !document.querySelector(".entry-splash"), undefined, { timeout: 15000 });
-    assert.equal(await page.evaluate(() => window.__startupSplashes), 1, "Auth preparation and home entry must share exactly one splash");
+    assert.equal(await page.evaluate(() => window.__startupSplashes), 1, "Authenticated home entry must show exactly one brand splash");
     await page.click('button[aria-label="강단 라인업 자동화 시작하기"]');
     await page.waitForFunction(() => location.pathname === "/weekly" && !document.querySelector("[data-weekly-intro]"), undefined, { timeout: 60000 });
     assert.equal(await page.evaluate(() => window.__startupSplashes), 1, "Page navigation must not replay the app startup splash");
