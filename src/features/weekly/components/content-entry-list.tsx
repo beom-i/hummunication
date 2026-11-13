@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -24,7 +23,7 @@ export function ContentEntryList({ entries, kind, onEdit, onAdd, onRemove }: {
       <div className="mt-5 mb-1 flex items-center gap-[14px] px-3">
         <span className="flex size-6 items-center justify-center rounded-full bg-primary text-base font-bold text-home-brand">{index + 1}</span>
         <h2 className="min-w-0 flex-1 truncate text-xl font-bold tracking-[-0.4px]">{entry.name || "미입력"}</h2>
-        <div className="flex gap-1"><Button variant="secondary" size="icon" onClick={() => setRemoving(entry.id)} aria-label={`${entry.name || `미입력 ${kind}`} 삭제`} className="rounded-full"><Trash2 className="size-4" /></Button><Button variant="secondary" onClick={() => onEdit(index)} aria-label={`${entry.name || `미입력 ${kind}`} 편집`} className="h-[38px] gap-1 rounded-full px-4 text-base font-bold"><Image src="/images/weekly/b44af.svg" alt="" width={18} height={18} />편집</Button></div>
+        <div className="flex gap-1"><Button variant="secondary" size="icon" onClick={() => setRemoving(entry.id)} aria-label={`${entry.name || `미입력 ${kind}`} 삭제`} className="rounded-full"><Image src="/images/weekly/cb1b2.svg" alt="" width={11} height={12} /></Button><Button variant="secondary" onClick={() => onEdit(index)} aria-label={`${entry.name || `미입력 ${kind}`} 편집`} className="h-[38px] gap-1 rounded-full px-4 text-base font-bold"><Image src="/images/weekly/b44af.svg" alt="" width={18} height={18} />편집</Button></div>
       </div>
     </article>)}
     <Button variant="outline" disabled={entries.length >= 20} className="h-[59px] gap-[14px] rounded-full border-dashed bg-card px-[27px] text-xl font-bold active:translate-y-0" onClick={onAdd}>{kind} 추가하기<Image src="/images/weekly/ebecb.svg" alt="" width={24} height={24} /></Button>
