@@ -1,15 +1,16 @@
 .sermon-rich-text { font-family: var(--font-card-body), sans-serif; font-size: 26px; line-height: 1.4230769231; letter-spacing: -0.65px; text-align: justify; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--sermon-copy); }
-.sermon-rich-text p { margin: 0; min-height: 37px; }
+/* Reserve the final tracking advance to match Figma's measured line edge. */
+.sermon-rich-text p { margin: 0; min-height: 37px; padding-inline-end: 0.025em; }
 .sermon-rich-text p + p { margin-top: 16px; }
 .sermon-rich-text strong { font-weight: 700; }
 .sermon-rich-text .sermon-point { font-weight: 700; }
-.sermon-rich-text .sermon-point-first { letter-spacing: -1.612px; }
+.sermon-rich-text .sermon-point-first { letter-spacing: -1.612px; padding-inline-end: 0.062em; }
 .sermon-rich-text em { font-style: italic; }
 .sermon-rich-text u { text-decoration: underline; }
 .sermon-rich-text s { text-decoration: line-through; }
 .sermon-rich-text u s, .sermon-rich-text s u { text-decoration-line: underline line-through; }
-.sermon-sheet-body { position: absolute; left: 56px; top: 140px; width: 610px; height: 715px; overflow: hidden; }
-.sermon-first-body { top: 141px; height: 714px; }
+.sermon-sheet-body { position: absolute; left: 56px; top: 139px; width: 610px; height: 715px; overflow: hidden; }
+.sermon-offset-body { top: 140px; height: 714px; }
 .sermon-sheet-header { position: absolute; top: 0; left: 0; width: 720px; height: 100px; background: var(--sermon-red); }
 .sermon-sheet-footer { position: absolute; top: 855px; left: 0; width: 721px; height: 45px; background: var(--sermon-red); }
 .sermon-html-card .template-sheet { background: var(--sermon-body-paper); }

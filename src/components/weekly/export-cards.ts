@@ -25,7 +25,7 @@ export async function exportCards(ids: string[], format: "png" | "jpeg", zip: bo
       if (quality === 0.85 || quality === 0.65) image.setAttribute("href", (await preparePhoto(source, quality)).source);
     }));
     const width = Number(sheet.dataset.exportWidth), height = Number(sheet.dataset.exportHeight);
-    const canvas = await toCanvas(sheet, { width, height, canvasWidth: 1200, canvasHeight: Math.round(1200 * height / width), pixelRatio: 1, fontEmbedCSS, includeStyleProperties, style: { transform: "none", position: "relative", left: "0", top: "0" } });
+    const canvas = await toCanvas(sheet, { width, height, canvasWidth: width, canvasHeight: height, pixelRatio: 1, fontEmbedCSS, includeStyleProperties, style: { transform: "none", position: "relative", left: "0", top: "0" } });
     files.push({ name: `${id}.${format === "jpeg" ? "jpg" : "png"}`, data: canvasBytes(canvas, format) });
   }
   const data = zip ? storedZip(files) : files[0].data;

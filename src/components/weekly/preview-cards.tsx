@@ -16,7 +16,7 @@ export function SermonCard({ index }: { index: number }) {
   return <TemplateFrame label={`설교 정리 ${index === 0 ? "표지" : `${index + 1}페이지`}`} className={index ? "sermon-html-card" : "sermon-cover-card"}>
     {index > 0 ? <>
       <div className="sermon-sheet-header"><TemplateAsset name="f874e.svg" x={228} y={38} width={267} height={24} /></div>
-      <div className={`sermon-sheet-body sermon-rich-text${index === 1 ? " sermon-first-body" : ""}`} dangerouslySetInnerHTML={{ __html: pages[index - 1] ?? "" }} />
+      <div className={`sermon-sheet-body sermon-rich-text${index === 1 || index === 4 ? " sermon-offset-body" : ""}`} dangerouslySetInnerHTML={{ __html: pages[index - 1] ?? "" }} />
     </> : <>
       <div className="sermon-cover-header"><TemplateAsset name="eacaf.svg" x={296.89} y={27.88} width={137} height={103} /><TemplateAsset name="ae05e.svg" x={239.79} y={72.61} width={9.318} height={9.318} nativeWidth={9.31799} nativeHeight={9.31799} /><TemplateAsset name="ae05e.svg" x={481.67} y={72.61} width={9.318} height={9.318} nativeWidth={9.31799} nativeHeight={9.31799} /></div>
       <div className="sermon-cover-content" data-fit-height="675">
@@ -49,7 +49,7 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
       <div className="family-cover-fish"><TemplateAsset name="de09a.png" x={0} y={0} width={115.994} height={115.994} nativeWidth={638} nativeHeight={638} /></div>
       <TemplateAsset name="3bdbb.svg" x={0} y={867} width={720} height={2} />
     </> : index === 1 ? <>
-      <h3 className="family-photo-title">NEW FAMILY</h3>
+      <TemplateAsset name="family-photo-heading.svg" x={32.39794921875} y={32.869991302490234} width={656} height={87} />
       <TemplateAsset name="6f2c6.svg" x={51.863} y={186} width={615.19} height={232} />
       <p className="family-photo-group" data-fit-width data-fit-text>( {group.name} )</p>
       <svg className="family-photo-image" width="588" height="331" viewBox="0 0 588 331">{group.photo && <CroppedPhoto source={group.photo} edit={group.photo_edit} aspect={16 / 9} width={588} height={331} label="순 단체사진" />}</svg>
@@ -57,7 +57,7 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
       <p className="family-photo-names" data-fit-height="60" data-fit-text>{people.map(person => person.name).filter(Boolean).join(" ㅣ ")}</p>
     </> : <>
       <TemplateAsset name="e5d42.svg" x={149.27} y={78} width={150.398} height={57} />
-      <h3 className="family-question"><span className="family-question-parenthesis">(</span><strong> 허브 </strong><span className="family-question-parenthesis">)</span><span className="family-question-text">  가 좋은 이유 ? </span></h3>
+      <TemplateAsset name="family-question-heading.svg" x={156.60205078125} y={147.0341796875} width={412} height={52} />
       <TemplateAsset name="3bdbb.svg" x={1} y={224} width={720} height={2} />
       <div className="family-card-answers"><CardTextRows rows={families[groupIndex]?.[index - 2] ?? []} /></div>
     </>}
