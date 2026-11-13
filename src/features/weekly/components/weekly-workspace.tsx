@@ -70,10 +70,6 @@ export function WeeklyWorkspace() {
           if (result.ok) {
             const recovery = loadPendingWeekly(editingId);
             stored.current = result.data;
-            if (recovery) {
-              stored.current = null;
-              if (recovery.ref) stored.current = { ...result.data, ref: recovery.ref };
-            }
             reset(recovery ? refreshRecoveredPhotos(recovery.data, result.data.data) : result.data.data);
           }
           else {
@@ -234,7 +230,7 @@ export function WeeklyWorkspace() {
 
   if (readyFor !== editingId) return <WeeklyLoadingScreen step={step} view={view} />;
 
-  if (errors.root?.type === "load") return <main className="flex min-h-svh flex-1 flex-col items-center justify-center gap-4 px-6"><FieldError errors={[errors.root]} /><Button asChild><Link href={`/auth/login?next=${encodeURIComponent(`/weekly?bulletin=${editingId}&step=2`)}`}>팀원 로그인</Link></Button><Button asChild variant="outline"><Link href="/home">홈으로</Link></Button></main>;
+  if (errors.root?.type === "load") return <main className="flex min-h-svh flex-1 flex-col items-center justify-center gap-4 px-6"><FieldError errors={[errors.root]} /><Button onClick={() => window.location.reload()}>다시 시도</Button><Button asChild variant="outline"><Link href="/home">홈으로</Link></Button></main>;
 
   return (
     <FormProvider {...methods}>
@@ -252,10 +248,10 @@ export function WeeklyWorkspace() {
           </div>}
           {loading && <span role="status" className="sr-only">화면을 불러오는 중이에요</span>}
       </div>
-      <div className="mx-auto w-full max-w-[480px] px-4" aria-live="polite">
-        {step !== 1 && <FieldError errors={[errors.root]} />}
-        {errors.root && <Button asChild variant="link"><Link target="_blank" rel="noreferrer" href={`/auth/login?next=${encodeURIComponent("/weekly" + (editingId ? `?bulletin=${editingId}&step=${step}` : "?step=1"))}`}>팀원 로그인</Link></Button>}
-      </div>
+      {errors.root && <div className="mx-auto my-4 w-full max-w-[680px] rounded-xl border border-destructive/20 bg-card p-4" aria-live="polite">
+        <FieldError errors={[errors.root]} />
+        {errors.root.type === "CONFLICT" && errors.date && <Button asChild variant="link" className="mt-2 h-auto p-0"><Link target="_blank" rel="noreferrer" href={bulletinHref(getValues("date"))}>저장된 주보 열기</Link></Button>}
+      </div>}
       {step === 2 && view !== "options" && <p className="weekly-draft-status px-5 py-3 text-center text-xs text-muted-foreground" aria-live="polite">{savedAt ? `이 브라우저에 보관됨 ${savedAt}` : "입력 내용은 이 브라우저에 보관돼요"}</p>}
       <WeeklyFooter nextDisabled={step === 2 && view === "options" && !sections.length} onBack={back} onSave={() => save()} busy={pending} showSave={step !== 3} onNext={step !== 3 ? next : () => save(true)} nextLabel={nextLabel} />
       </main>
