@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
   type ForgotPasswordFormData,
   forgotPasswordDefaultValues,
@@ -38,10 +39,15 @@ export function ForgotPasswordForm({
 
   const onSubmit = handleSubmit(async ({ email }) => {
     // This URL must be listed in Supabase Auth → URL Configuration → Redirect URLs.
-    const { error } = await createClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/update-password`,
-    });
-    if (error) setError("root", { message: "메일 발송에 실패했어요. 잠시 후 다시 시도해 주세요." });
+    try {
+      const { error } = await createClient().auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+      if (error) throw error;
+    } catch {
+      const message = "메일을 보내지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요";
+      setError("root", { message }); toast.error(message);
+    }
   });
 
   return (

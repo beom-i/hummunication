@@ -21,7 +21,7 @@ export async function uploadPhoto(input: unknown): Promise<Result<{ id: string }
     else if (jpeg) extension = "jpg";
     const path = `${userId}/photos/${crypto.randomUUID()}.${extension}`;
     const uploaded = await db.storage.from("uploads").upload(path, file, { contentType: file.type, upsert: false });
-    if (uploaded.error) return failure("INTERNAL_ERROR", "사진을 올리지 못했어요. 다시 시도해 주세요");
+    if (uploaded.error) return databaseFailure(uploaded.error);
     const { data, error } = await db.rpc("register_file", { p_path: path });
     if (error) return databaseFailure(error);
     return { ok: true, data: { id: data } };

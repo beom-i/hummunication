@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfileMenu, type WorkspaceProfile } from "./profile-menu";
 import "./sidebar-motion.css";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
@@ -22,11 +22,12 @@ function NavigationIcon({ name }: { name: "home" | "card-news" | "team" }) {
   );
 }
 
-export function AppSidebar({ active = "home", onHome, onCardNews, onTeam }: {
+export function AppSidebar({ active = "home", onHome, onCardNews, onTeam, profile }: {
   active?: "home" | "weekly";
   onHome: () => void;
   onCardNews: () => void;
   onTeam: () => void;
+  profile: WorkspaceProfile;
 }) {
   const { state, toggleSidebar, setOpen, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
@@ -85,16 +86,7 @@ export function AppSidebar({ active = "home", onHome, onCardNews, onTeam }: {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="sidebar-profile flex h-[51px] w-full items-center gap-2 overflow-hidden rounded-lg p-2">
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-sidebar-accent text-base text-sidebar-accent-foreground">K</AvatarFallback>
-          </Avatar>
-          <div className="flex min-w-[159px] flex-1 flex-col gap-0.5 leading-normal whitespace-nowrap transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0">
-            <span className="text-sm font-medium">팀원</span>
-            <span className="text-xs text-sidebar-foreground/70">팀장 · 37기</span>
-          </div>
-          <Image src={`${asset}chevrons-up-down.svg`} alt="" width={16} height={16} className="shrink-0 transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0" />
-        </div>
+        <ProfileMenu profile={profile} />
       </SidebarFooter>
       <SidebarRail aria-label="사이드바 접기 또는 펼치기" title="사이드바 접기 또는 펼치기" />
     </Sidebar>

@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { reportServerError } from "@/features/auth/utils/report-server-error";
 import { WorkIntro } from "@/features/workspace/components/work-intro";
 import { useSidebar } from "@/components/ui/sidebar";
 import { bulletinHref } from "@/features/bulletins/utils/format";
@@ -79,8 +80,8 @@ export function WeeklyWorkspace() {
             const recovery = loadPendingWeekly(editingId);
             const local = recovery ? { data: recovery.data } : findBulletin(editingId);
             if (recovery?.ref) stored.current = { id: editingId, data: recovery.data, ref: recovery.ref, updatedAt: new Date().toISOString() };
-            if (local && (result.error.code === "NOT_FOUND" || result.error.code === "UNAUTHORIZED")) reset(local.data);
-            else { setError("root", { type: "load", message: result.error.message }); }
+            if (local && result.error.code === "NOT_FOUND") reset(local.data);
+            else { setError("root", { type: "load", message: result.error.message }); reportServerError(result.error); }
           }
         } else {
           const dates = upcomingPublishDates();
@@ -107,7 +108,10 @@ export function WeeklyWorkspace() {
         }
         setReadyFor(editingId);
       } catch {
-        if (!cancelled) { setError("root", { message: "주보를 불러오지 못했어요. 연결과 브라우저 저장 공간을 확인해 주세요" }); setReadyFor(editingId); }
+        if (!cancelled) {
+          const message = "주보를 불러오지 못했어요. 연결과 브라우저 저장 공간을 확인해 주세요";
+          setError("root", { message }); toast.error(message); setReadyFor(editingId);
+        }
       }
     };
     void load();
@@ -144,12 +148,12 @@ export function WeeklyWorkspace() {
       savePendingWeekly(parsed.data, stored.current?.ref ?? null);
       try { localStorage.setItem(legacyDraftKey, JSON.stringify(parsed.data)); } catch { /* Large images can exceed browser storage; server saving still works. */ }
       const photos = await prepareWeeklyPhotos(parsed.data);
-      if (!photos.ok) { setFormErrors(methods, photos.error); toast.error(photos.error.message); return; }
+      if (!photos.ok) { setFormErrors(methods, photos.error); reportServerError(photos.error); return; }
       photos.data.families.forEach((group, index) => methods.setValue(`families.${index}.photo_id`, group.photo_id));
       methods.setValue("sermon.thumbnailId", photos.data.sermon.thumbnailId);
       savePendingWeekly(photos.data, stored.current?.ref ?? null);
       const result = await saveWeekly({ ref: stored.current?.ref ?? null, values: weeklyValuesForSave(photos.data) });
-      if (!result.ok) { setFormErrors(methods, result.error); toast.error(result.error.message); return; }
+      if (!result.ok) { setFormErrors(methods, result.error); reportServerError(result.error); return; }
       stored.current = result.data;
       savedRef.current = result.data.id;
       reset(result.data.data);

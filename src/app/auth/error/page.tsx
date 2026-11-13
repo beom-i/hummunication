@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 async function ErrorContent({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reason?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, reason } = await searchParams;
+  if (reason === "invalid-link") return <p className="text-sm text-muted-foreground">로그인 링크가 만료되었거나 올바르지 않아요. 링크를 다시 확인해 주세요.</p>;
   return (
     <p className="text-sm text-muted-foreground">
       {error ? `오류: ${error}` : "알 수 없는 오류가 발생했습니다."}
@@ -17,7 +20,7 @@ async function ErrorContent({
 export default function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reason?: string }>;
 }) {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -30,6 +33,7 @@ export default function Page({
             <Suspense>
               <ErrorContent searchParams={searchParams} />
             </Suspense>
+            <Button asChild variant="outline" className="mt-5"><Link href="/auth/login">로그인으로 돌아가기</Link></Button>
           </CardContent>
         </Card>
       </div>

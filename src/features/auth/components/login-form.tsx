@@ -18,6 +18,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { type LoginFormData, loginDefaultValues, loginSchema } from "./schemas";
+import { toast } from "sonner";
+import { safeNextPath } from "../utils/session";
 
 // Accounts are issued by an admin — there is intentionally no sign-up link.
 export function LoginForm({
@@ -36,14 +38,22 @@ export function LoginForm({
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    const { error } = await createClient().auth.signInWithPassword(values);
-    if (error) {
-      setError("root", { message: "이메일 또는 비밀번호가 올바르지 않아요." });
-      return;
+    try {
+      const { error } = await createClient().auth.signInWithPassword(values);
+      if (error) {
+        let message = "로그인하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요";
+        if (error.code === "invalid_credentials") message = "이메일 또는 비밀번호가 올바르지 않아요. 다시 확인해 주세요";
+        else if (error.status === 429) message = "요청이 많아요. 잠시 후 다시 시도해 주세요";
+        setError("root", { message }); toast.error(message, { id: "login-error" }); return;
+      }
+    } catch {
+      const message = "로그인하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요";
+      setError("root", { message }); toast.error(message, { id: "login-error" }); return;
     }
+    toast.dismiss("login-error");
+    toast.dismiss("authentication");
     const next = new URLSearchParams(window.location.search).get("next");
-    const path = next?.split("?")[0];
-    router.push(next && path && ["/home", "/weekly", "/bulletins"].includes(path) ? next : "/home");
+    router.replace(safeNextPath(next));
     router.refresh();
   });
 

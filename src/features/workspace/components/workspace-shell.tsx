@@ -8,7 +8,8 @@ import { AppSidebar } from "./app-sidebar";
 import { EntrySplash } from "./entry-splash";
 import { WorkIntro } from "./work-intro";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import { Toaster } from "@/components/ui/sonner";
+import { SessionGuard } from "@/features/auth/components/session-guard";
+import type { WorkspaceProfile } from "./profile-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const StartWeeklyContext = createContext<(() => void) | null>(null);
@@ -19,7 +20,7 @@ export function useStartWeekly() {
   return startWeekly;
 }
 
-function WorkspaceContent({ children }: { children: React.ReactNode }) {
+function WorkspaceContent({ children, profile }: { children: React.ReactNode; profile: WorkspaceProfile }) {
   const pathname = usePathname();
   const router = useRouter();
   const { setOpen } = useSidebar();
@@ -42,7 +43,7 @@ function WorkspaceContent({ children }: { children: React.ReactNode }) {
   return <StartWeeklyContext.Provider value={startWeekly}>
     <div className="home-scene flex min-h-svh w-full" data-view={weekly ? "weekly" : "home"} data-entering={entering}>
       <div className="contents" inert={entering || weeklyIntroStartedAt !== null}>
-        <AppSidebar active={weekly ? "weekly" : "home"} onHome={() => router.push("/home")} onCardNews={showComingSoon} onTeam={showComingSoon} />
+        <AppSidebar profile={profile} active={weekly ? "weekly" : "home"} onHome={() => router.push("/home")} onCardNews={showComingSoon} onTeam={showComingSoon} />
         <SidebarTrigger aria-label="메뉴 열기" className="fixed top-4 left-4 z-20 bg-background md:hidden" />
         {children}
       </div>
@@ -52,13 +53,13 @@ function WorkspaceContent({ children }: { children: React.ReactNode }) {
   </StartWeeklyContext.Provider>;
 }
 
-export function WorkspaceShell({ children }: { children: React.ReactNode }) {
+export function WorkspaceShell({ children, profile }: { children: React.ReactNode; profile: WorkspaceProfile }) {
   const pathname = usePathname();
   const weekly = pathname === "/weekly" || pathname === "/bulletins";
   return <TooltipProvider delayDuration={150}>
     <SidebarProvider defaultOpen={!weekly} style={{ "--sidebar-width-icon": "64px" } as React.CSSProperties}>
-      <WorkspaceContent>{children}</WorkspaceContent>
+      <SessionGuard />
+      <WorkspaceContent profile={profile}>{children}</WorkspaceContent>
     </SidebarProvider>
-    <Toaster />
   </TooltipProvider>;
 }
