@@ -84,7 +84,19 @@ assert.equal(refreshRecoveredPhotos(unrelatedPhotos, currentPhotos).families[0].
 assert.equal(refreshRecoveredPhotos(unrelatedPhotos, currentPhotos).sermonThumbnail, recoveredPhotos.sermonThumbnail);
 console.log("Restoring a draft refreshes matching signed URLs without replacing edits or new local photos.");
 
-const { photoOutputSize, photoSizeLabel } = await import("../src/components/weekly/photo-optimization.ts");
+const { photoOutputSize, photoSizeLabel, preparePhoto } = await import("../src/components/weekly/photo-optimization.ts");
+await assert.rejects(preparePhoto("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E", 0.85), /사진 파일 형식을 확인해 주세요/, "Only raster photo bytes may reach an exported image source");
+const browser = { window: globalThis.window, document: globalThis.document, FileReader: globalThis.FileReader };
+const originalBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=", "base64");
+const originalUrl = URL.createObjectURL(new Blob([originalBytes], { type: "image/png" }));
+try {
+  globalThis.window = { Image: class { naturalWidth = 1; naturalHeight = 1; async decode() {} } };
+  globalThis.document = { createElement: () => ({ getContext: () => ({ drawImage() {} }), toBlob: callback => callback(new Blob([new Uint8Array(1000)], { type: "image/webp" })) }) };
+  globalThis.FileReader = class { readAsDataURL(blob) { void blob.arrayBuffer().then(bytes => { this.result = `data:${blob.type};base64,${Buffer.from(bytes).toString("base64")}`; this.onload(); }); } };
+  const output = await preparePhoto(originalUrl, 0.65);
+  assert.equal(output.size, originalBytes.length);
+  assert.equal(output.source, `data:image/png;base64,${originalBytes.toString("base64")}`, "A small original must keep its bytes while returning an encoded raster source, never the input URL");
+} finally { Object.assign(globalThis, browser); URL.revokeObjectURL(originalUrl); }
 for (const [width, height] of [[4000, 2240], [2240, 4000], [1200, 800], [1, 1]]) {
   const output = photoOutputSize(width, height);
   assert.ok(output.width > 0 && output.height > 0 && Math.max(output.width, output.height) <= 2400);

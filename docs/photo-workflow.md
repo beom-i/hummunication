@@ -32,6 +32,8 @@ Vercel Production 환경변수에 다음 이름을 등록해야 일일 정리가
 - `CRON_SECRET`: 무작위로 생성한 16자 이상의 비밀값. Vercel이 정리 요청 Authorization 헤더에 전달한다.
 - 기존 `NEXT_PUBLIC_SUPABASE_URL`은 동일 프로젝트를 가리켜야 한다.
 
+2026-11-13 두 값을 Vercel Production 전용 Secret으로 등록하고 등록 상태를 재확인했다. 기존 Supabase Secret Key와 새 256비트 무작위 CRON_SECRET을 사용했다. 값은 저장소·로컬 파일·채팅에 남기지 않았다. 새 운영 배포부터 적용되며 실제 정리 실행은 아직 수행하지 않았다.
+
 `vercel.json`은 매일 18:00 UTC(한국 03:00)에 `/api/cron/photos`를 호출한다. 배포 이후 적용된다. 한 번에 최대 100개를 정리하므로 24시간이 지나도 다음 실행·배치까지 파일이 남을 수 있다. 두 환경변수가 없어도 일반 사진 편집은 가능하지만 정리는 수행되지 않는다. 인증 없는 요청은 401이며, 권한 키가 없는 정상 인증 요청은 503이다. 응답에는 사진 경로·키를 포함하지 않는다.
 
 Supabase의 실제 파일 삭제는 SQL이 아닌 [Storage API](https://supabase.com/docs/guides/storage/management/delete-objects)로 수행한다. 정리 요청 보호는 [Vercel CRON_SECRET 방식](https://vercel.com/docs/schedules/cron-jobs/manage-cron-jobs#securing-cron-jobs)을 따른다.

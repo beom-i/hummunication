@@ -21,9 +21,18 @@ for (const [id, nodeId, field] of [
   assert.ok(screen.annotations.some(annotation => annotation.field.includes(field)), `Missing DB field: ${field}`);
 }
 console.log("PASS: shared section selection and all three linked mockups are mapped");
+for (const image of ['javascript:alert(1)', 'data:image/png;base64,AAAA" data-report-injection="true']) {
+  const data = structuredClone(screens); data[0].image = image;
+  const nodes = new Map();
+  const getNode = id => { if (!nodes.has(id)) nodes.set(id, { textContent: "", innerHTML: "", addEventListener() {} }); return nodes.get(id); };
+  getNode("screen-data").textContent = JSON.stringify(data);
+  assert.throws(() => runInNewContext(screenHtml.slice(screenHtml.lastIndexOf("<script>") + 8, screenHtml.lastIndexOf("</script>")), {
+    document: { getElementById: getNode },
+  }, { timeout: 3000 }), /내장 PNG 형식을 확인해 주세요/, "Report links must reject non-raster or malformed image URLs before rendering");
+}
 for (const [file, tag, inject] of [
   ["backend-code-structure.html", "templates", rows => { rows[0].language = payload; }],
-  ["weekly-screen-data-map.html", "screen-data", rows => { rows[0].annotations[0].n = payload; rows[0].image += '" data-report-injection="true'; }],
+  ["weekly-screen-data-map.html", "screen-data", rows => { rows[0].annotations[0].n = payload; rows[0].title += '" data-report-injection="true'; }],
 ]) {
   const html = readFileSync(`docs/reports/${file}`, "utf8");
   const data = JSON.parse(html.match(new RegExp(`<script id="${tag}" type="application/json">([\\s\\S]*?)</script>`))[1]);
