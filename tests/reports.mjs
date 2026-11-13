@@ -46,11 +46,20 @@ for (const [file, tag, inject] of [
   // DOM is the external boundary; execute the published report's complete script.
   runInNewContext(html.slice(html.lastIndexOf("<script>") + 8, html.lastIndexOf("</script>")), {
     document: { getElementById: getNode, querySelectorAll: () => [] },
+    Blob, URL, atob,
     window: { addEventListener() {} }, location: { hash: "" }, history: { replaceState() {} },
   }, { timeout: 3000 });
   const markup = [...nodes.values()].map(node => node.innerHTML).join("\n");
   assert.equal(/<img\s+data-report-injection/i.test(markup), false, `${file} interpreted metadata as HTML`);
   assert.equal(/"\s+data-report-injection=/i.test(markup), false, `${file} allowed metadata to create an attribute`);
   assert.equal(/&lt;img data-report-injection/i.test(markup), true, `${file} should preserve literal metadata text`);
+  if (tag === "screen-data") {
+    const link = getNode("original").href;
+    assert.ok(link.startsWith("blob:"), "Downloads must use a generated raster Blob URL, not a DOM-provided URL");
+    const image = await (await fetch(link)).blob();
+    assert.equal(image.type, "image/png");
+    assert.deepEqual(Buffer.from(await image.arrayBuffer()), Buffer.from(data[0].image.split(",")[1], "base64"), "Downloading the original must preserve every PNG byte");
+    URL.revokeObjectURL(link);
+  }
   console.log(`PASS: ${file} renders metadata as literal text and keeps attribute values contained`);
 }
