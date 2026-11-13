@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { richDocumentSchema, documentFromText, documentText } from '../src/components/ui/rich-text-editor/schemas.ts';
-import { photoGeometry, centeredPhotoCrop } from '../src/components/weekly/photo-crop-geometry.ts';
+import { photoGeometry, centeredPhotoCrop } from '../src/features/files/utils/photo-crop-geometry.ts';
 
 assert.equal(documentText(richDocumentSchema.parse(documentFromText('A\n\n한글 😀'))), 'A\n\n한글 😀');
 for (const attrs of [{ color: 'red;position:fixed' }, { color: '<script>' }, { fontSize: '100px' }, { fontSize: 'url(x)' }]) {
@@ -22,7 +22,7 @@ for (const [width, height] of [[1200, 800], [800, 1200], [100, 100]]) {
 assert.deepEqual(photoGeometry(1200, 800, 90), { width: 800, height: 1200, transform: 'translate(800 0) rotate(90)' });
 console.log('PASS: bounded fixed-aspect selections for landscape, portrait, square and all quarter turns');
 
-const { bulletinDateCode, bulletinTitle, bulletinHref } = await import('../src/components/bulletins/format.ts');
+const { bulletinDateCode, bulletinTitle, bulletinHref } = await import('../src/features/bulletins/utils/format.ts');
 assert.equal(bulletinDateCode('2030-12-31'), '301231');
 assert.equal(bulletinDateCode('2030-01-01'), '300101');
 assert.equal(bulletinTitle('2030-12-31'), '12월 다섯째주 주보');

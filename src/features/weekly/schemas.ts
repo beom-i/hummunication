@@ -3,7 +3,7 @@ import { z } from "zod";
 import { documentFromText } from "@/components/ui/rich-text-editor/schemas";
 import { sermonFormSchema, sermonCompleteSchema, recordRefSchema } from "@/features/sermon/schemas";
 import { familyFormSchema, familyCompleteSchema } from "@/features/family/schemas";
-import { senderFormSchema, senderCompleteSchema } from "@/features/sender/schemas";
+import { senderFormSchema, senderCompleteSchema, newSender } from "@/features/sender/schemas";
 
 export const sectionOptions = [
   { value: "thumbnail", label: "주보 썸네일" }, { value: "cover", label: "주보 표지" },
@@ -45,10 +45,12 @@ export const newFamily = (index: number): WeeklyFormData["families"][number] => 
   members: [{ name: "순원 1", answer: "" }],
 });
 export const weeklyDefaultValues: DefaultValues<WeeklyFormData> = {
-  date: "2026-11-08", sections: sectionOptions.map((option) => option.value),
+  date: "2026-11-08", sections: ["thumbnail", "cover", "sermon", "family"],
+  sermonThumbnail: "",
   sermon: {
     date: "2026-11-08", speaker: "담당 목사님", title: "기드온 Part 2, 하나님이 하십니다", bible: "사사기 7:1-8",
     content: documentFromText("기드온에게 모인 사람은 삼만 이천 명이었습니다. 그런데 하나님께서는 ‘너를 따르는 백성이 너무 많다’고 말씀하십니다.\n\n두려워 떠는 자를 돌려보내고, 물가에서 다시 사람을 고릅니다. 결국 남은 사람은 삼백 명. 이스라엘이 스스로 자랑하지 못하게 하시려는 것입니다.\n\n우리는 숫자와 조건이 갖춰져야 무언가를 할 수 있다고 생각합니다. 그러나 하나님의 방법은 달랐습니다. 하나님을 의지하며 믿음으로 나아갑니다."),
   },
-  families: [newFamily(0), newFamily(1)],
+  families: [{ ...newFamily(0), name: "" }],
+  senders: [newSender()],
 };

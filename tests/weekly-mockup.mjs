@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { paginateCardRows } from "../src/components/weekly/card-pagination.ts";
-import { weeklyDraftSchema, weeklySchema, weeklyDefaultValues } from "../src/components/weekly/schemas.ts";
+import { paginateCardRows } from "../src/features/weekly/utils/card-pagination.ts";
+import { weeklyDraftSchema, weeklySchema, weeklyDefaultValues } from "../src/features/weekly/schemas.ts";
 
 const draft = weeklyDraftSchema.parse(weeklyDefaultValues);
 assert.equal(weeklyDraftSchema.safeParse({ ...draft, sections: [] }).success, true);
@@ -28,7 +28,7 @@ assert.deepEqual(paginateCardRows([], measure, 70), [[]]);
 globalThis.document = originalDocument;
 console.log("Weekly validation and lossless card pagination passed.");
 
-const { clearPendingWeekly, legacyDraftKey, loadPendingWeekly, savePendingWeekly } = await import("../src/components/bulletins/local-store.ts");
+const { clearPendingWeekly, legacyDraftKey, loadPendingWeekly, savePendingWeekly } = await import("../src/features/bulletins/utils/local-store.ts");
 const storage = new Map();
 globalThis.localStorage = {
   getItem: key => storage.get(key) ?? null,
@@ -84,7 +84,7 @@ assert.equal(refreshRecoveredPhotos(unrelatedPhotos, currentPhotos).families[0].
 assert.equal(refreshRecoveredPhotos(unrelatedPhotos, currentPhotos).sermonThumbnail, recoveredPhotos.sermonThumbnail);
 console.log("Restoring a draft refreshes matching signed URLs without replacing edits or new local photos.");
 
-const { photoOutputSize, photoSizeLabel, preparePhoto } = await import("../src/components/weekly/photo-optimization.ts");
+const { photoOutputSize, photoSizeLabel, preparePhoto } = await import("../src/features/files/utils/photo-optimization.ts");
 await assert.rejects(preparePhoto("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E", 0.85), /사진 파일 형식을 확인해 주세요/, "Only raster photo bytes may reach an exported image source");
 const browser = { window: globalThis.window, document: globalThis.document, FileReader: globalThis.FileReader };
 const originalBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=", "base64");
@@ -117,7 +117,7 @@ assert.equal(weeklyValuesForSave(editedDraft).families[0].photo_id, photoId, "Ed
 assert.equal(weeklyDraftSchema.safeParse({ ...editedDraft, families: [{ ...editedFamily, photo_edit: { ...editedPhoto, quality: 0.1 } }] }).success, false);
 assert.equal(weeklyDraftSchema.safeParse({ ...editedDraft, sermon: { ...editedDraft.sermon, thumbnailEdit: editedPhoto } }).success, false, "Sermon editing must validate its own fixed aspect ratio");
 console.log("Photo edits preserve original references and output quality with domain-specific aspect ratios.");
-const { photoCropForAspect } = await import("../src/components/weekly/photo-crop-geometry.ts");
+const { photoCropForAspect } = await import("../src/features/files/utils/photo-crop-geometry.ts");
 const legacyPhotoEdit = editedDraft.families[0].photo_edit;
 const fittedCrop = photoCropForAspect(legacyPhotoEdit.sourceWidth, legacyPhotoEdit.sourceHeight, legacyPhotoEdit.rotation, legacyPhotoEdit.crop, 16 / 9);
 const currentPhotoEdit = { ...legacyPhotoEdit, crop: fittedCrop };
@@ -128,7 +128,7 @@ assert.ok(fittedCrop.y + fittedCrop.height <= legacyPhotoEdit.crop.y + legacyPho
 assert.ok(Math.abs(fittedCrop.width * legacyPhotoEdit.sourceHeight / (fittedCrop.height * legacyPhotoEdit.sourceWidth) - 16 / 9) < 0.00001);
 console.log("Legacy family crops remain readable and fit the final photo frame without losing original files.");
 
-const { recentBulletins, savedBulletinsKey, markBulletinMigrated } = await import("../src/components/bulletins/local-store.ts");
+const { recentBulletins, savedBulletinsKey, markBulletinMigrated } = await import("../src/features/bulletins/utils/local-store.ts");
 assert.deepEqual(recentBulletins().map(record => record.id), [], "An empty browser must not advertise sample bulletins as saved work");
 const localRecord = { id: saved.date, data: saved, updatedAt: "2035-01-07T00:00:00.000Z" };
 storage.set(savedBulletinsKey, JSON.stringify([localRecord]));

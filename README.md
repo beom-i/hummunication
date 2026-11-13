@@ -2,6 +2,8 @@
 
 Next.js (App Router) · TypeScript · shadcn/ui · Supabase · Vercel
 
+코드 배치와 의존성 원칙은 [구조 안내](docs/architecture.md)를 참고한다.
+
 ## 로컬 실행
 
 ```bash

@@ -27,6 +27,7 @@ printf '\n[1/5] 로컬 검사\n'
 pnpm lint
 pnpm typecheck
 pnpm test:validation
+pnpm test:workflow
 pnpm test:weekly
 pnpm test:photos
 pnpm test:content

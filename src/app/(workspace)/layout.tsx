@@ -1,5 +1,5 @@
 import localFont from "next/font/local";
-import { WorkspaceShell } from "@/components/home/workspace-shell";
+import { WorkspaceShell } from "@/features/workspace/components/workspace-shell";
 
 const suit = localFont({
   src: "../../../public/fonts/suit/SUIT-Variable.woff2",
