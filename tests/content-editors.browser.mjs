@@ -42,7 +42,11 @@ export async function runContentEditorRegression(page, screenshotDir) {
     await page.click('.weekly-footer button:text-is("완료하기")'); await locationIs('families');
     assert.equal(await page.evaluate(() => document.querySelector('[aria-label="순 목록"]').textContent.includes('변경한 예시 순')), true);
     await page.click('section[aria-label="순 목록"] > button'); await locationIs('family-card-edit');
+    await page.click('.weekly-footer button:text-is("완료하기")');
+    assert.equal(await page.evaluate(() => !!document.querySelector('#family-name').closest('[data-slot="field"]').querySelector('[data-slot="field-error"]')), true, 'An empty group name must show its error');
     await page.fill('input[name="families.2.name"]', '추가한 예시 순');
+    await page.press('input[name="families.2.name"]', 'Tab');
+    await page.waitForFunction(() => !document.querySelector('#family-name').closest('[data-slot="field"]').querySelector('[data-slot="field-error"]'), undefined, { timeout: 2000 });
     await page.waitForFunction(() => document.querySelector('.family-photo-group').textContent.includes('추가한 예시 순'));
     await page.click('.weekly-footer button:text-is("완료하기")'); await locationIs('families');
     assert.equal(await page.evaluate(() => document.querySelectorAll('section[aria-label="순 목록"] > article').length), 3, 'Adding a group must open the same combined editor and retain existing groups');

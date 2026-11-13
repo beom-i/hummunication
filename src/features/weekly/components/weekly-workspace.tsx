@@ -47,7 +47,7 @@ export function WeeklyWorkspace() {
   const savedRef = useRef<string | null>(null);
   const { step, view } = weeklyLocation(search);
   const { navigate, loading, loadingTarget } = useWeeklyTransition(main, editingId, pending);
-  const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: weeklyDefaultValues });
+  const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: weeklyDefaultValues, mode: "onTouched" });
   const { reset, setError, clearErrors, getValues, trigger, formState: { errors } } = methods;
   const sections = useWatch({ control: methods.control, name: "sections" });
   const families = useWatch({ control: methods.control, name: "families" });
