@@ -7,13 +7,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { BulletinPreview } from "@/features/home/data/mock-bulletins";
+import { BulletinTemplate } from "@/features/weekly/templates/bulletin-card";
 import { loadWeeklyList } from "@/features/weekly/actions";
 import { reportServerError } from "@/features/auth/utils/report-server-error";
 import { bulletinHref, bulletinTitle } from "@/features/bulletins/utils/format";
 import "./home-motion.css";
 
 const asset = "/images/home/";
+type BulletinPreview = { id: string; month: string; week: string; publishedAt: string };
 
 export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
   const [bulletins, setBulletins] = useState<BulletinPreview[] | null>(null);
@@ -30,7 +31,7 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
         const dates = result.data.map(record => record.date);
         setBulletins(dates.map(id => {
           const [month, week] = bulletinTitle(id).replace(" 주보", "").split(" ");
-          return { id, month, week, publishedAt: `${Number(id.slice(5, 7))}/${Number(id.slice(-2))}`, previewImage: "/images/home/bulletin-preview.png" };
+          return { id, month, week, publishedAt: `${Number(id.slice(5, 7))}/${Number(id.slice(-2))}` };
         }));
       } catch {
         if (!cancelled) { const message = "주보를 불러오지 못했어요. 연결을 확인해 주세요"; setLoadError(message); toast.error(message); }
@@ -83,22 +84,22 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
               <Skeleton className="mt-1 h-6 w-24 motion-reduce:animate-none" />
               <Skeleton className="absolute right-3 bottom-3 size-10 rounded-full motion-reduce:animate-none" />
             </div>) : (bulletins ?? []).slice(0, showAll ? undefined : 4).map((bulletin) => (
-              <Card key={bulletin.id} data-bulletin-id={bulletin.id} className="bulletin-card relative isolate h-[164px] w-full gap-0 overflow-visible rounded-[10px] bg-transparent p-0 shadow-none ring-0">
-                <div className="bulletin-reveal absolute inset-x-0 top-0 h-[164px] overflow-hidden rounded-[10px] border border-bulletin-border">
-                  <div className="bulletin-photo pointer-events-none absolute top-[164px] -left-px h-[122px] w-[calc(100%+2px)] overflow-hidden rounded-[9px] border-3 border-bulletin-photo-border" aria-hidden="true">
-                    <Image src={bulletin.previewImage} alt="" fill sizes="(max-width: 640px) 90vw, 260px" loading="eager" className="object-cover object-bottom" />
-                    <div className="absolute inset-0 bg-bulletin-photo-shade" />
+              <Card key={bulletin.id} data-bulletin-id={bulletin.id} className="bulletin-card home-bulletin-card relative isolate min-h-[164px] w-full self-start gap-0 overflow-visible rounded-[10px] bg-transparent p-0 shadow-none ring-0">
+                <div className="bulletin-reveal relative overflow-hidden rounded-[10px] border border-bulletin-border">
+                  <div className="pointer-events-none relative flex min-h-0 items-start justify-between bg-background px-[18px] pt-[18px] pb-4">
+                    <Image src="/images/templates/bulletin-glow.svg" alt="" width={270} height={252} className="pointer-events-none absolute top-[83px] left-1/2 max-w-none -translate-x-1/2" />
+                    <div className="relative flex flex-col gap-1">
+                      <p className="text-sm leading-[17px] tracking-[-0.42px] text-muted-foreground">{bulletin.publishedAt} 발행</p>
+                      <h3 className="text-[22px] leading-[28px] font-extrabold tracking-[-0.66px]">{bulletin.month}<br />{bulletin.week} 주보</h3>
+                    </div>
+                    <span className="absolute right-3 bottom-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-home-brand">
+                      <Image src="/images/templates/bulletin-arrow.svg" alt="" width={20} height={20} className="-rotate-90" />
+                    </span>
                   </div>
-                  <div className="pointer-events-none absolute top-0 -left-px w-[calc(100%+2px)]">
-                    <div className="relative flex h-[164px] items-start justify-between bg-background px-[18px] pt-[18px] pb-4">
-                      <Image src="/images/templates/bulletin-glow.svg" alt="" width={270} height={252} className="pointer-events-none absolute top-[83px] left-1/2 max-w-none -translate-x-1/2" />
-                      <div className="relative flex flex-col gap-1">
-                        <p className="text-sm leading-[17px] tracking-[-0.42px] text-muted-foreground">{bulletin.publishedAt} 발행</p>
-                        <h3 className="text-[22px] leading-[28px] font-extrabold tracking-[-0.66px]">{bulletin.month}<br />{bulletin.week} 주보</h3>
-                      </div>
-                      <span className="absolute right-3 bottom-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-home-brand">
-                        <Image src="/images/templates/bulletin-arrow.svg" alt="" width={20} height={20} className="-rotate-90" />
-                      </span>
+                  <div className="min-h-0 overflow-hidden" aria-hidden="true">
+                    <div className="bulletin-photo pointer-events-none relative overflow-hidden rounded-[9px] border-3 border-bulletin-photo-border">
+                      <BulletinTemplate date={bulletin.id} />
+                      <div className="absolute inset-0 bg-bulletin-photo-shade" />
                     </div>
                   </div>
                   <Button asChild className="absolute inset-0 h-full w-full rounded-[10px] border-0 bg-transparent p-0 hover:bg-transparent active:translate-y-0"><Link href={bulletinHref(bulletin.id)} aria-label={`${bulletin.month} ${bulletin.week} 주보 상세 보기`} /></Button>
