@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
     if (!error) {
       redirect(next);
     }
-    redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);
+    redirect("/auth/error?reason=invalid-link");
   }
 
-  redirect(`/auth/error?error=${encodeURIComponent("No token hash or type")}`);
+  redirect("/auth/error?reason=invalid-link");
 }

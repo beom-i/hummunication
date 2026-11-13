@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { reportServerError } from "@/features/auth/utils/report-server-error";
 import { loadWeekly, deleteWeekly } from "@/features/weekly/actions";
 import type { WeeklyRecord } from "@/features/weekly/schemas";
 import { ArrowLeft, Pencil, LockKeyhole, Trash2 } from "lucide-react";
@@ -38,7 +39,7 @@ function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyR
     methods.clearErrors("root");
     try {
       const result = await deleteWeekly(record.ref);
-      if (!result.ok) { methods.setError("root", { message: result.error.message }); toast.error(result.error.message); return; }
+      if (!result.ok) { methods.setError("root", { message: result.error.message }); reportServerError(result.error); return; }
       toast.success("주보를 삭제했어요"); router.push("/home"); router.refresh();
     } catch { const message = "삭제 결과를 확인한 뒤 다시 시도해 주세요"; methods.setError("root", { message }); toast.error(message); }
   });
@@ -87,11 +88,17 @@ export function BulletinDetail() {
         const result = await loadWeekly(date);
         if (cancelled) return;
         if (result.ok) setLoaded({ record: result.data, sample: false });
-        else if (result.error.code === "NOT_FOUND" || result.error.code === "UNAUTHORIZED") {
+        else if (result.error.code === "NOT_FOUND") {
           const local = findBulletin(date);
           setLoaded({ record: local, sample: !loadSavedBulletins().some(record => record.id === date), error: local ? undefined : result.error.message });
-        } else setLoaded({ record: null, sample: false, error: result.error.message });
-      } catch { if (!cancelled) setLoaded({ record: null, sample: false, error: "주보를 불러오지 못했어요. 연결을 확인해 주세요" }); }
+          if (!local) reportServerError(result.error);
+        } else { setLoaded({ record: null, sample: false, error: result.error.message }); reportServerError(result.error); }
+      } catch {
+        if (!cancelled) {
+          const message = "주보를 불러오지 못했어요. 연결을 확인해 주세요";
+          setLoaded({ record: null, sample: false, error: message }); toast.error(message);
+        }
+      }
     };
     void load();
     return () => { cancelled = true; };

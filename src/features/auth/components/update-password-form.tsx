@@ -15,6 +15,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { reportServerError } from "../utils/report-server-error";
+import { loginRequired } from "../utils/session";
 import {
   type UpdatePasswordFormData,
   updatePasswordDefaultValues,
@@ -39,12 +42,21 @@ export function UpdatePasswordForm({
   });
 
   const onSubmit = handleSubmit(async ({ newPassword }) => {
-    const { error } = await createClient().auth.updateUser({ password: newPassword });
-    if (error) {
-      setError("root", { message: error.message });
-      return;
+    try {
+      const { error } = await createClient().auth.updateUser({ password: newPassword });
+      if (error) {
+        const failure = { code: "INTERNAL_ERROR" as const, message: "비밀번호를 변경하지 못했어요. 잠시 후 다시 시도해 주세요" };
+        if (error.status === 401 || error.code === "session_not_found") {
+          setError("root", { message: loginRequired.message }); reportServerError(loginRequired); return;
+        }
+        setError("root", { message: failure.message }); reportServerError(failure); return;
+      }
+    } catch {
+      const message = "비밀번호를 변경하지 못했어요. 연결을 확인한 뒤 다시 시도해 주세요";
+      setError("root", { message }); toast.error(message); return;
     }
-    router.push("/protected");
+    toast.success("비밀번호를 변경했어요");
+    router.replace("/home");
   });
 
   return (

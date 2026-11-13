@@ -2,6 +2,7 @@ import type { ZodError } from "zod";
 
 export type ErrorCode = "INVALID_INPUT" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "INTERNAL_ERROR";
 export type AppError = { code: ErrorCode; message: string; fields?: Record<string, string[]> };
+export const loginRequired: AppError = { code: "UNAUTHORIZED", message: "로그인이 만료되었거나 로그인 정보가 없어요. 다시 로그인해 주세요" };
 export type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
 export const failure = (code: ErrorCode, message: string): Result<never> => ({ ok: false, error: { code, message } });
 
@@ -13,7 +14,10 @@ export function invalidInput(error: ZodError): Result<never> {
   }
   return { ok: false, error: { code: "INVALID_INPUT", message: "입력 내용을 확인해 주세요", fields } };
 }
-export function databaseFailure(error: { code?: string }): Result<never> {
+export function databaseFailure(error: { code?: string; status?: number | string; statusCode?: number | string }): Result<never> {
+  const status = Number(error.status ?? error.statusCode);
+  if (status === 401 || ["PGRST301", "PGRST302", "PGRST303"].includes(error.code ?? "")) return { ok: false, error: loginRequired };
+  if (status === 403) return failure("FORBIDDEN", "접근 권한을 확인해 주세요");
   switch (error.code) {
     case "22023": case "22007": case "22008": case "22P02": case "23514": return failure("INVALID_INPUT", "입력 내용을 확인해 주세요");
     case "42501": return failure("FORBIDDEN", "접근 권한을 확인해 주세요");

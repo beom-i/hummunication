@@ -1,7 +1,7 @@
 import { registerHooks } from 'node:module';
 import { existsSync } from 'node:fs';
 registerHooks({ resolve(specifier, context, next) {
-  if (specifier === 'next/cache' || specifier === 'next/headers') return next(specifier + '.js', context);
+  if (specifier === 'next/cache' || specifier === 'next/headers' || specifier === 'next/server') return next(specifier + '.js', context);
   if (specifier.startsWith('@/')) {
     const base = new URL('../src/' + specifier.slice(2), import.meta.url);
     for (const suffix of ['.ts', '.tsx', '/index.ts']) {

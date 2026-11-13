@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BulletinPreview } from "@/features/home/data/mock-bulletins";
 import { loadWeeklyList } from "@/features/weekly/actions";
-import { recentBulletins } from "@/features/bulletins/utils/local-store";
+import { reportServerError } from "@/features/auth/utils/report-server-error";
 import { bulletinHref, bulletinTitle } from "@/features/bulletins/utils/format";
 import "./home-motion.css";
 
@@ -26,8 +26,8 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
       try {
         const result = await loadWeeklyList();
         if (cancelled) return;
-        if (!result.ok && result.error.code !== "UNAUTHORIZED") { setLoadError(result.error.message); toast.error(result.error.message); return; }
-        const dates = result.ok ? result.data.map(record => record.date) : recentBulletins().map(record => record.id);
+        if (!result.ok) { setLoadError(result.error.message); reportServerError(result.error); return; }
+        const dates = result.data.map(record => record.date);
         setBulletins(dates.map(id => {
           const [month, week] = bulletinTitle(id).replace(" 주보", "").split(" ");
           return { id, month, week, publishedAt: `${Number(id.slice(5, 7))}/${Number(id.slice(-2))}`, previewImage: "/images/home/bulletin-preview.png" };
