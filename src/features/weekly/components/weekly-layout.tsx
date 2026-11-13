@@ -30,12 +30,12 @@ export function WeeklyHeading({ step, title, description, contentKey }: { step: 
 
 export function WeeklyFooter({ onBack, onSave, onNext, nextLabel = "다음", busy = false, showSave = true, nextDisabled = false, feedback }: { onBack: () => void; onSave: () => void; onNext: () => void; nextLabel?: string; busy?: boolean; showSave?: boolean; nextDisabled?: boolean; feedback?: React.ReactNode }) {
   return (
-    <footer className="weekly-footer sticky bottom-0 z-20 min-h-20 border-t border-border bg-card px-10 py-4 max-sm:px-4">
+    <footer className="weekly-footer sticky bottom-0 z-20 min-h-24 border-t border-border bg-card px-10 py-4 max-sm:px-3">
+      <div className="flex w-full items-center gap-4 max-sm:gap-2">
+      <Button variant="ghost" disabled={busy} onClick={onBack} className="mr-auto shrink-0 gap-1 text-base text-secondary-foreground max-sm:gap-0 max-sm:px-0 max-sm:text-xs"><Image src="/images/weekly/33936.svg" alt="" width={20} height={21} className="max-sm:w-3" />이전</Button>
       {feedback}
-      <div className="flex w-full items-center gap-3">
-      <Button variant="ghost" disabled={busy} onClick={onBack} className="mr-auto gap-1 text-base text-secondary-foreground"><Image src="/images/weekly/33936.svg" alt="" width={20} height={21} />이전</Button>
-      {showSave && <Button variant="secondary" loading={busy} size="workflow" onClick={onSave}>저장</Button>}
-      <Button size="workflow" disabled={busy || nextDisabled} loading={busy && !showSave} onClick={onNext} className="w-[156px] px-4 max-sm:w-[100px]">{nextLabel}</Button>
+      {showSave && <Button variant="secondary" loading={busy} size="workflow" onClick={onSave} className="shrink-0 max-sm:h-10 max-sm:min-w-14 max-sm:px-3 max-sm:text-xs">저장</Button>}
+      <Button size="workflow" disabled={busy || nextDisabled} loading={busy && !showSave} onClick={onNext} className="w-[156px] shrink-0 px-4 max-sm:h-10 max-sm:w-[70px] max-sm:px-2 max-sm:text-xs">{nextLabel}</Button>
       </div>
     </footer>
   );

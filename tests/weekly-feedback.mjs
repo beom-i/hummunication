@@ -25,4 +25,13 @@ const messages = weeklyErrorMessages(errors);
 assert.deepEqual(messages.map(item => item.label), ["설교자", "새가족 1 · 순원 1 이름", "파송자 1 · 기수"]);
 assert.equal(messages.some(item => item.path === "root"), false, "Generic root validation text must not repeat the detailed field errors");
 assert.deepEqual(weeklyErrorMessages({ root: { type: "CONFLICT", message: "같은 날짜의 주보가 있어요" } }).map(item => item.message), ["같은 날짜의 주보가 있어요"]);
+const queuedErrors = { sermon: {
+  speaker: { message: "설교자를 입력해 주세요" }, title: { message: "설교 제목을 입력해 주세요" },
+  bible: { message: "성경 본문을 입력해 주세요" }, content: { message: "정리 내용을 입력해 주세요" },
+}, families: [{ name: { message: "순 이름을 입력해 주세요" } }] };
+assert.deepEqual(weeklyErrorMessages(queuedErrors).map(item => item.path), ["sermon.speaker", "sermon.title", "sermon.bible"]);
+delete queuedErrors.sermon.speaker;
+assert.deepEqual(weeklyErrorMessages(queuedErrors).map(item => item.path), ["sermon.title", "sermon.bible", "sermon.content"], "Resolving an error must reveal the next error without discarding hidden errors");
+delete queuedErrors.sermon.title;
+assert.deepEqual(weeklyErrorMessages(queuedErrors).map(item => item.path), ["sermon.bible", "sermon.content", "families.0.name"]);
 console.log("PASS: new drafts default to the next Korean Sunday and all nested field errors share one labelled summary");

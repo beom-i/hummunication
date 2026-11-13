@@ -1,5 +1,5 @@
 .weekly-workspace { --progress-duration: 360ms; --progress-ease: cubic-bezier(0.22, 1, 0.36, 1); }
-.weekly-workspace:has(#weekly-form-errors) { padding-bottom: 300px; scroll-padding-bottom: 300px; }
+.weekly-workspace:has(#weekly-form-errors) { padding-bottom: 164px; scroll-padding-bottom: 164px; }
 .weekly-workspace .weekly-content { flex-shrink: 0; }
 .weekly-heading { flex-shrink: 0; }
 .weekly-sermon-layout { width: calc(100% - 176px); max-width: 1200px; transition: padding-right var(--progress-duration) var(--progress-ease); }

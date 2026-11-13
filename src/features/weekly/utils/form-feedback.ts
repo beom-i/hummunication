@@ -37,5 +37,5 @@ export function weeklyErrorMessages(errors: FieldErrors<WeeklyFormData>): Messag
     }
   }
   visit(errors, "");
-  return messages.filter(item => item.path !== "root" || !messages.some(other => other.path !== "root" && (other.message === item.message || errors.root?.type === "INVALID_INPUT")));
+  return messages.filter(item => item.path !== "root" || !messages.some(other => other.path !== "root" && (other.message === item.message || errors.root?.type === "INVALID_INPUT"))).slice(0, 3);
 }
