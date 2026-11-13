@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AppSidebar } from "./app-sidebar";
-import { EntrySplash } from "./entry-splash";
+import { useWorkspaceStartup } from "./workspace-startup";
 import { WorkIntro } from "./work-intro";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { SessionGuard } from "@/features/auth/components/session-guard";
@@ -25,9 +25,8 @@ function WorkspaceContent({ children, profile }: { children: React.ReactNode; pr
   const router = useRouter();
   const { setOpen } = useSidebar();
   const weekly = pathname === "/weekly" || pathname === "/bulletins";
-  const [entering, setEntering] = useState(!weekly);
+  const { entering } = useWorkspaceStartup();
   const [weeklyIntroStartedAt, setWeeklyIntroStartedAt] = useState<number | null>(null);
-  const finishEntry = useCallback(() => setEntering(false), []);
   const finishWeeklyIntro = useCallback(() => setWeeklyIntroStartedAt(null), []);
   const startWeekly = useCallback(() => {
     if (weeklyIntroStartedAt !== null) return;
@@ -47,13 +46,14 @@ function WorkspaceContent({ children, profile }: { children: React.ReactNode; pr
         <SidebarTrigger aria-label="메뉴 열기" className="fixed top-4 left-4 z-20 bg-background md:hidden" />
         {children}
       </div>
-      {entering && <EntrySplash onComplete={finishEntry} />}
       {weeklyIntroStartedAt !== null && <div className="home-theme fixed inset-0 z-50" data-weekly-intro><WorkIntro startedAt={weeklyIntroStartedAt} onComplete={finishWeeklyIntro} /></div>}
     </div>
   </StartWeeklyContext.Provider>;
 }
 
 export function WorkspaceShell({ children, profile }: { children: React.ReactNode; profile: WorkspaceProfile }) {
+  const { onReady } = useWorkspaceStartup();
+  useEffect(onReady, [onReady]);
   const pathname = usePathname();
   const weekly = pathname === "/weekly" || pathname === "/bulletins";
   return <TooltipProvider delayDuration={150}>

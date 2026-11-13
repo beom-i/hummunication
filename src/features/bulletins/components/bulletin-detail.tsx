@@ -15,7 +15,7 @@ import { loadWeekly, deleteWeekly } from "@/features/weekly/actions";
 import type { WeeklyRecord } from "@/features/weekly/schemas";
 import { ArrowLeft, Pencil, LockKeyhole, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { BulletinDetailSkeleton } from "./bulletin-detail-skeleton";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -103,7 +103,7 @@ export function BulletinDetail() {
     void load();
     return () => { cancelled = true; };
   }, [date]);
-  if (!loaded) return <main className="flex min-h-svh flex-1 items-center justify-center gap-2"><Spinner />주보를 불러오는 중이에요</main>;
+  if (!loaded) return <BulletinDetailSkeleton />;
   if (!loaded.record) return <main className="flex min-h-svh flex-1 flex-col items-center justify-center gap-5 px-6 text-center"><h1 className="text-xl font-bold">{loaded.error ?? "주보를 찾을 수 없어요"}</h1><p className="text-sm text-muted-foreground">팀원 로그인 또는 주보 발행일을 확인해 주세요.</p><Button asChild><Link href={`/auth/login?next=${encodeURIComponent(`/bulletins?date=${date}`)}`}>팀원 로그인</Link></Button><Button asChild variant="outline"><Link href="/home">홈으로</Link></Button></main>;
   return <SavedBulletinView key={`${loaded.record.id}-${loaded.record.updatedAt}`} record={loaded.record} sample={loaded.sample} />;
 }

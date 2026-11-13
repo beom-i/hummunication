@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import "./splash-motion.css";
 
@@ -23,20 +23,26 @@ const letters = [
 ];
 const templateLetters = new Set(["03e37.svg", "87806.svg", "96b87.svg", "e01aa.svg"]);
 
-export function EntrySplash({ onComplete }: { onComplete: () => void }) {
+export function EntrySplash({ ready, onComplete }: { ready: boolean; onComplete: () => void }) {
   const stage = useRef<HTMLDivElement>(null);
+  const [animated, setAnimated] = useState(false);
   useEffect(() => {
     const container = stage.current!;
     const observer = new ResizeObserver(([entry]) => container.style.setProperty("--splash-scale", String(Math.min(entry.contentRect.width / 1440, entry.contentRect.height / 1024))));
     observer.observe(container);
-    const timer = window.setTimeout(onComplete, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 200 : 2150);
+    const timer = window.setTimeout(() => setAnimated(true), window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 200 : 1850);
     return () => { observer.disconnect(); window.clearTimeout(timer); };
-  }, [onComplete]);
-  return <div ref={stage} className="entry-splash fixed inset-0 z-50 overflow-hidden bg-background" role="status" aria-label="HUMMUNICATION 불러오는 중">
+  }, []);
+  useEffect(() => {
+    if (!ready || !animated) return;
+    const timer = window.setTimeout(onComplete, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300);
+    return () => window.clearTimeout(timer);
+  }, [ready, animated, onComplete]);
+  return <div ref={stage} className="entry-splash fixed inset-0 z-50 overflow-hidden bg-background" data-ready={ready} data-exiting={ready && animated} role="status" aria-label="HUMMUNICATION 불러오는 중">
     <div className="splash-stage absolute top-1/2 left-1/2 h-[1024px] w-[1440px]" aria-hidden="true">
       <Image src="/images/weekly/fcc4e.png" alt="" width={1013} height={1559} priority className="absolute top-0 left-[-245px] max-w-none opacity-57" />
       {letters.map(({ src, x, y, width, height, motion }) => <span key={`${src}-${x}`} className="absolute" style={{ left: x, top: y, width, height }}><Image src={`/images/${templateLetters.has(src) ? "templates" : "weekly"}/${src}`} alt="" width={width} height={height} loading="eager" unoptimized className={motion} /></span>)}
     </div>
-    <button className="sr-only focus:not-sr-only focus:absolute focus:right-6 focus:bottom-6" onClick={onComplete}>홈으로 건너뛰기</button>
+    <button disabled={!ready} className="sr-only focus:not-sr-only focus:absolute focus:right-6 focus:bottom-6" onClick={onComplete}>시작 화면 건너뛰기</button>
   </div>;
 }
