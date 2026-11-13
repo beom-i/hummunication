@@ -2,17 +2,15 @@
 
 import { bulletinTitle } from "@/features/bulletins/utils/format";
 import Image from "next/image";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import type { WeeklyFormData } from "../schemas";
 import { upcomingPublishDates } from "../utils/publish-dates";
 
 export function PublishDate({ lockedDate }: { lockedDate?: string }) {
-  const { register, control, formState: { errors } } = useFormContext<WeeklyFormData>();
-  const selected = useWatch({ control, name: "date" });
+  const { register, formState: { errors } } = useFormContext<WeeklyFormData>();
   let dates = upcomingPublishDates();
   if (lockedDate) dates = [lockedDate];
-  else if (selected && !dates.includes(selected)) dates = [selected, ...dates];
   const options = dates.map(value => ({ value, label: `${Number(value.slice(5, 7))}월 ${Number(value.slice(-2))}일${lockedDate ? "" : " (주일)"}`, week: bulletinTitle(value).replace(" 주보", "") }));
 
   return (

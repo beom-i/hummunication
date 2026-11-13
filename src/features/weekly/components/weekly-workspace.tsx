@@ -47,7 +47,7 @@ export function WeeklyWorkspace() {
   const savedRef = useRef<string | null>(null);
   const { step, view } = weeklyLocation(search);
   const { navigate, loading, loadingTarget } = useWeeklyTransition(main, editingId, pending);
-  const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: weeklyDefaultValues, mode: "onTouched" });
+  const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: { ...weeklyDefaultValues, date: "", sermon: { ...weeklyDefaultValues.sermon, date: "" } }, mode: "onTouched" });
   const { reset, setError, clearErrors, getValues, trigger, formState: { errors } } = methods;
   const sections = useWatch({ control: methods.control, name: "sections" });
   const families = useWatch({ control: methods.control, name: "families" });
@@ -83,14 +83,23 @@ export function WeeklyWorkspace() {
             else { setError("root", { type: "load", message: result.error.message }); }
           }
         } else {
-          const date = upcomingPublishDates()[0];
-          reset({ ...weeklyDefaultValues, date, sermon: { ...weeklyDefaultValues.sermon, date } });
+          const dates = upcomingPublishDates();
+          const date = dates[1];
+          let values = { ...weeklyDefaultValues, date, sermon: { ...weeklyDefaultValues.sermon, date } };
+          let invalidDraft = false;
           const saved = localStorage.getItem(legacyDraftKey);
           if (saved) {
-            const result = legacyWeeklySchema.safeParse(JSON.parse(saved));
-            if (result.success) { reset(result.data); }
-            else setError("root", { message: "이전 입력을 확인해 주세요. 원본은 브라우저에 남아 있어요" });
+            let parsed: unknown;
+            try { parsed = JSON.parse(saved); } catch { parsed = null; }
+            const result = legacyWeeklySchema.safeParse(parsed);
+            if (result.success) {
+              values = result.data;
+              if (!dates.includes(result.data.date)) values = { ...result.data, date, sermon: { ...result.data.sermon, date } };
+            }
+            else invalidDraft = true;
           }
+          reset(values);
+          if (invalidDraft) setError("root", { message: "이전 입력을 확인해 주세요. 원본은 브라우저에 남아 있어요" });
         }
         if (editingId && !stored.current && !loadPendingWeekly(editingId)) {
           const draft = localStorage.getItem(draftKey);

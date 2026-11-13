@@ -5,13 +5,17 @@ export async function verifyWeeklyFollowup(page, origin) {
   await page.goto(`${origin}/weekly?step=1`);
   await page.waitForSelector('.weekly-content input[name="date"]', { state: "attached" });
   const dates = await page.evaluate(() => [...document.querySelectorAll('input[name="date"]')].map(input => input.value));
-  const korea = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const now = await page.evaluate(() => Date.now());
+  const korea = new Date(now + 9 * 60 * 60 * 1000);
   const sunday = new Date(Date.UTC(korea.getUTCFullYear(), korea.getUTCMonth(), korea.getUTCDate()));
   sunday.setUTCDate(sunday.getUTCDate() + (7 - sunday.getUTCDay()) % 7);
-  assert.equal(dates[0], sunday.toISOString().slice(0, 10), "New publication options must start with the current Korean Sunday");
+  assert.equal(dates.length, 5, "New publication options must contain exactly five Sundays");
+  assert.equal(dates[1], sunday.toISOString().slice(0, 10), "The second option must be the current Korean Sunday");
+  assert.deepEqual(dates.map(value => new Date(value).getTime()), Array.from({ length: 5 }, (_, index) => sunday.getTime() + (index - 1) * 7 * 86400000));
 
   const key = "hummunication.weekly-draft";
-  const backup = await page.evaluate(key => localStorage.getItem(key), key);
+  const keys = [key, ...[...dates, "2035-01-07"].flatMap(date => [`hummunication.weekly-draft.${date}`, `hummunication.weekly.pending.${date}`])];
+  const backup = await page.evaluate(keys => keys.map(key => [key, localStorage.getItem(key)]), keys);
   const fixture = {
     date: "2035-01-07", sections: ["family", "senders"], sermonThumbnail: "",
     sermon: { date: "2035-01-07", speaker: "", title: "", bible: "", content: { type: "doc", content: [{ type: "paragraph" }] } },
@@ -53,10 +57,16 @@ export async function verifyWeeklyFollowup(page, origin) {
       }, id), `${id} must explain that it is saved as management information`);
     }
     await page.goto(`${origin}/weekly?step=1`);
-    await page.waitForSelector('input[name="date"][value="2035-01-07"]', { state: "attached" });
-    assert.ok(await page.evaluate(() => document.querySelector('input[name="date"][value="2035-01-07"]').checked), "Existing draft dates must remain selected outside the upcoming date range");
+    await page.waitForSelector(`input[name="date"][value="${dates[1]}"]`, { state: "attached" });
+    assert.equal(await page.evaluate(() => document.querySelectorAll('input[name="date"]').length), 5, "An old draft must not add an extra publication date");
+    assert.ok(await page.evaluate(date => document.querySelector(`input[name="date"][value="${date}"]`).checked, dates[1]), "An out-of-range draft must default to the current Sunday");
+    await page.goto(`${origin}/weekly?step=2&view=family-card-edit&group=0`);
+    await page.waitForSelector('#family-name');
+    assert.equal(await page.evaluate(() => document.querySelector('#family-name').value), "예시 1순", "Adjusting an old draft date must preserve its content");
     console.log("PASS: upcoming Sundays, one family cover, desktop/mobile sticky previews and management-field descriptions");
   } finally {
-    await page.evaluate(({ key, backup }) => { if (backup === null) localStorage.removeItem(key); else localStorage.setItem(key, backup); }, { key, backup });
+    await page.goto(`${origin}/home`);
+    await page.evaluate(backup => { for (const [key, value] of backup) { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } }, backup);
+    await page.cdp("Emulation.clearDeviceMetricsOverride");
   }
 }
