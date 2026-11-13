@@ -13,5 +13,5 @@ export function setFormErrors<T extends FieldValues>(form: UseFormReturn<T>, err
     });
     if (known && messages[0]) form.setError(path as Path<T>, { type: "server", message: messages[0] });
   }
-  form.setError("root", { type: "server", message: error.message });
+  form.setError("root", { type: error.code, message: error.message });
 }

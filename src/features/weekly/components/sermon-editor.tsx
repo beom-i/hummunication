@@ -28,9 +28,9 @@ function SermonFields() {
       <Controller control={control} name="sermon.date" render={({ field }) => <DatePicker id="sermon-date" name={field.name} ref={field.ref} value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} aria-invalid={!!errors.sermon?.date} />} />
       <FieldError errors={[errors.sermon?.date]} />
     </Field>
-    {([{ name: "speaker", label: "설교자" }, { name: "title", label: "설교 제목" }, { name: "bible", label: "성경 본문" }] as const).map(({ name, label }) => <Field key={name} data-invalid={!!errors.sermon?.[name]} className="gap-2">
+    {([{ name: "speaker", label: "설교자", placeholder: "설교자 이름을 입력해 주세요" }, { name: "title", label: "설교 제목", placeholder: "설교 제목을 입력해 주세요" }, { name: "bible", label: "성경 본문", placeholder: "예: 요한복음 3:16–18" }] as const).map(({ name, label, placeholder }) => <Field key={name} data-invalid={!!errors.sermon?.[name]} className="gap-2">
       <FieldLabel htmlFor={`sermon-${name}`} className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">{label}</FieldLabel>
-      <Input id={`sermon-${name}`} variant="filled" {...register(`sermon.${name}`)} aria-invalid={!!errors.sermon?.[name]} />
+      <Input id={`sermon-${name}`} variant="filled" placeholder={placeholder} {...register(`sermon.${name}`)} aria-invalid={!!errors.sermon?.[name]} />
       <FieldError errors={[errors.sermon?.[name]]} />
     </Field>)}
     <Field className="gap-2" data-invalid={!!errors.sermonThumbnail}>
@@ -48,7 +48,7 @@ function SermonFields() {
 
 export function SermonEditor({ preview }: { preview: boolean }) {
   const { control, setError, clearErrors, formState: { errors } } = useFormContext<WeeklyFormData>();
-  const { pages, ready } = useSermonPages();
+  const { pages, loading } = useSermonPages();
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [previewFont, setPreviewFont] = useState("");
@@ -58,7 +58,7 @@ export function SermonEditor({ preview }: { preview: boolean }) {
   const openCard = (index: number, children: React.ReactNode) => <button type="button" aria-label={`설교 ${index === 0 ? "표지" : `본문 ${index}페이지`} 크게 보기`} onClick={event => { const style = getComputedStyle(event.currentTarget); setPreviewFont(style.getPropertyValue("--font-home-body")); setPreviewCardFont(style.getPropertyValue("--font-card-body")); setExpanded(index); }} className="block w-full rounded-[14px] text-left outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">{children}</button>;
 
   let previewContent;
-  if (preview && !ready) previewContent = <SermonPreviewSkeleton />;
+  if (preview && loading) previewContent = <SermonPreviewSkeleton />;
   else if (!preview) previewContent = <><h2 className="mb-4 text-lg font-bold">표지 이미지</h2><div className="weekly-preview-stage px-6 py-7"><figure className="mx-auto w-full max-w-[300px]">{openCard(0, <SermonCard index={0} />)}<figcaption className="mx-auto mt-3 w-fit rounded-full bg-secondary px-3 py-1 text-sm font-bold text-secondary-foreground">표지</figcaption></figure></div></>;
   else previewContent = <>
         <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold tracking-[-0.72px]">카드뉴스 {pages.length + 1}장</h2></div>
@@ -84,7 +84,7 @@ export function SermonEditor({ preview }: { preview: boolean }) {
 
   return <>
     <ContentEditorLayout preview={
-    <section className="weekly-preview-panel" aria-label={preview ? "설교 본문 카드뉴스 미리보기" : "설교 표지 미리보기"} aria-busy={preview && !ready}>
+    <section className="weekly-preview-panel" aria-label={preview ? "설교 본문 카드뉴스 미리보기" : "설교 표지 미리보기"} aria-busy={preview && loading}>
       {previewContent}
     </section>
     }>

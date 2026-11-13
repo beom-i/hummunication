@@ -2,7 +2,7 @@
 .splash-o { animation-delay: 36ms; }
 .splash-h, .splash-u { animation: splash-letter-rise 1.75s both; }
 .splash-u { animation-delay: 36ms; }
-.entry-splash { animation: splash-exit 300ms 1850ms ease-out both; }
+.entry-splash[data-exiting="true"] { animation: splash-exit 300ms ease-out both; }
 @keyframes splash-letter-swap {
   0%, 15%, 100% { opacity: 1; translate: 0 0; }
   32%, 65% { opacity: 0; translate: 0 -12px; }
@@ -15,6 +15,6 @@
 }
 @keyframes splash-exit { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .splash-c, .splash-o, .entry-splash { animation: none; }
+  .splash-c, .splash-o, .entry-splash[data-exiting="true"] { animation: none; }
   .splash-h, .splash-u { display: none; }
 }

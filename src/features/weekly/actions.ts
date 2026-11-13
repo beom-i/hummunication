@@ -23,6 +23,10 @@ export async function saveWeekly(input: unknown): Promise<Result<WeeklyRecord>> 
       p_families: values.families.map(({ id, name, photo_id, photo_edit, leader_name, leader_answer, members }) => ({ id: id ?? null, name, photo_id, photo_edit: photo_id ? photo_edit : null, leader_name, leader_answer, members })),
       p_senders: (values.senders ?? []).map(({ id, name, generation, group_name, date, prayer }) => ({ id: id ?? null, name, generation, group_name, date: date || null, prayer })),
     });
+    if (error?.code === "23505" && error.message.includes('"weekly_active_date"')) {
+      const message = "이 발행일의 주보가 이미 있어요. 저장된 주보를 열어 이어서 편집해 주세요";
+      return { ok: false, error: { code: "CONFLICT", message, fields: { "values.date": [message] } } };
+    }
     if (error) return databaseFailure(error);
     revalidatePath("/home"); revalidatePath("/bulletins");
     return getWeekly(values.date);

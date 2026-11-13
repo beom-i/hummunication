@@ -1,3 +1,4 @@
+import "./weekly-save.mjs";
 import assert from 'node:assert/strict';
 import { sermonFormSchema } from '../src/features/sermon/schemas.ts';
 const result = sermonFormSchema.safeParse({ date: '', speaker: '', title: '', bible: 'x'.repeat(201), content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] } });

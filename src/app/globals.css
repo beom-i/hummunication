@@ -121,15 +121,16 @@
   color: var(--sidebar-foreground);
 }
 
-.bulletin-reveal { transition: height 680ms linear; }
+.bulletin-reveal { display: grid; grid-template-rows: 162px 0fr; transition: grid-template-rows 680ms cubic-bezier(0.42, 0, 0.15, 1); }
 .bulletin-photo { transform: translateY(-110px); transition: transform 680ms cubic-bezier(0.42, 0, 0.15, 1); }
-.bulletin-card:has(:focus-visible) { z-index: 1; }
-.bulletin-card:has(:focus-visible) .bulletin-reveal { height: 282px; }
-.bulletin-card:has(:focus-visible) .bulletin-photo { transform: translateY(-6px); }
+.bulletin-photo > .template-card { border: 0; border-radius: 0; box-shadow: none; }
+.home-bulletin-card:has(:focus-visible) { z-index: 1; }
+.home-bulletin-card:has(:focus-visible) .bulletin-reveal { grid-template-rows: 162px 1fr; }
+.home-bulletin-card:has(:focus-visible) .bulletin-photo { transform: translateY(0); }
 @media (hover: hover) {
-  .bulletin-card:hover { z-index: 1; }
-  .bulletin-card:hover .bulletin-reveal { height: 282px; }
-  .bulletin-card:hover .bulletin-photo { transform: translateY(-6px); }
+  .home-bulletin-card:hover { z-index: 1; }
+  .home-bulletin-card:hover .bulletin-reveal { grid-template-rows: 162px 1fr; }
+  .home-bulletin-card:hover .bulletin-photo { transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -219,6 +220,11 @@
   }
 }
 
+.home-theme, .weekly-popover {
+  --thumbnail-copy: #ebe5dd;
+  --thumbnail-red: #b4292f;
+}
+
 /* Weekly workspace tokens are scoped so the existing auth screens keep their theme. */
 .home-scene[data-view="weekly"], .weekly-popover {
   --background: #fafafa;
@@ -243,8 +249,6 @@
   --family-green: #5b7d41;
   --family-names: #353535;
   --art-black: #000;
-  --thumbnail-copy: #ebe5dd;
-  --thumbnail-red: #b4292f;
   --family-copy: #4a3a2a;
   --family-photo: #64616b;
   --family-skeleton: #dcd5ca;

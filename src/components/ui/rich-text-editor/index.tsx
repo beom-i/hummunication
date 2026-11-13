@@ -22,7 +22,7 @@ export function RichTextEditor({ value, onChange, onBlur, id, invalid }: {
     immediatelyRender: false,
     extensions: [StarterKit.configure({ heading: false, blockquote: false, bulletList: false, orderedList: false, listItem: false, listKeymap: false, code: false, codeBlock: false, horizontalRule: false, link: false }), TextStyle, Color, FontSize],
     content: value,
-    editorProps: { attributes: { id, role: "textbox", "aria-label": "정리 내용", "aria-multiline": "true", "aria-invalid": String(!!invalid), class: "rich-editor-content" } },
+    editorProps: { attributes: { id, role: "textbox", "aria-label": "정리 내용", "aria-multiline": "true", "aria-placeholder": "설교 정리 내용을 입력하거나 붙여넣어 주세요", "aria-invalid": String(!!invalid), class: "rich-editor-content" } },
     onUpdate: ({ editor }) => onChange(editor.getJSON() as RichDocument),
     onBlur,
   });
@@ -43,7 +43,7 @@ export function RichTextEditor({ value, onChange, onBlur, id, invalid }: {
   const applyColor = handleSubmit(data => { editor?.chain().focus().setColor(data.color).run(); setColorOpen(false); });
   const currentColor = storedColorSchema.safeParse(state?.color);
 
-  return <div className="rich-editor overflow-hidden rounded-2xl border bg-muted" data-invalid={invalid || undefined}>
+  return <div className="rich-editor overflow-hidden rounded-2xl border bg-muted" data-empty={value.content.every(paragraph => !paragraph.content?.length)} data-invalid={invalid || undefined}>
     <div className="flex flex-wrap items-center gap-1 border-b bg-card p-2" role="toolbar" aria-label="정리 내용 서식">
       {([{ mark: "bold", label: "굵게", Icon: Bold, action: () => editor?.chain().focus().toggleBold().run() },
         { mark: "italic", label: "기울임", Icon: Italic, action: () => editor?.chain().focus().toggleItalic().run() },

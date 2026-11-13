@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Card,
   CardContent,
@@ -91,8 +92,8 @@ export function LoginForm({
                 <FieldError errors={[errors.password]} />
               </Field>
               <FieldError>{errors.root?.message}</FieldError>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "로그인 중..." : "로그인"}
+              <Button type="submit" className="w-full" disabled={isSubmitting} aria-busy={isSubmitting} aria-label="로그인">
+                {isSubmitting ? <Spinner aria-label="불러오는 중" /> : "로그인"}
               </Button>
               <Link
                 href="/auth/forgot-password"

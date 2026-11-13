@@ -31,7 +31,6 @@ export function PublishDate({ lockedDate }: { lockedDate?: string }) {
           </FieldGroup>
           <FieldError errors={[errors.date]} />
         </fieldset>
-        <FieldError errors={[errors.root]} />
     </section>
   );
 }

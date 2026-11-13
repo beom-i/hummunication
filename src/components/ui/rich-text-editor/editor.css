@@ -4,3 +4,5 @@
 .rich-editor-content em { font-style: italic; }
 .rich-editor-content u { text-decoration: underline; }
 .rich-editor-content s { text-decoration: line-through; }
+
+.rich-editor[data-empty="true"] .rich-editor-content p:first-child::before { content: "설교 정리 내용을 입력하거나 붙여넣어 주세요"; float: left; height: 0; color: var(--muted-foreground); pointer-events: none; }

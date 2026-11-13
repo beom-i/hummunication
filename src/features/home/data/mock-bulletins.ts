@@ -8,5 +8,3 @@ export const mockBulletins = [
   { id: "2026-10-11", month: "10월", week: "셋째주", publishedAt: "10/11", previewImage },
   { id: "2026-10-04", month: "10월", week: "첫째주", publishedAt: "10/4", previewImage },
 ];
-
-export type BulletinPreview = (typeof mockBulletins)[number];
