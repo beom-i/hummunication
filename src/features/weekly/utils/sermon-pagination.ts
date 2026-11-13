@@ -1,4 +1,4 @@
-import { richDocumentSchema, type RichDocument } from "@/components/ui/rich-text-editor/schemas";
+import { richDocumentSchema, templateDocument, type RichDocument } from "@/components/ui/rich-text-editor/schemas";
 
 type Inline = NonNullable<RichDocument["content"][number]["content"]>[number];
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -7,13 +7,9 @@ function paragraphHtml(nodes: Inline[]) {
     if (node.type === "hardBreak") return "<br>";
     let text = escape(node.text);
     for (const mark of node.marks ?? []) {
-      if (mark.type === "textStyle") {
-        const style = [mark.attrs.color && `color:${mark.attrs.color}`, mark.attrs.fontSize && `font-size:${mark.attrs.fontSize}`].filter(Boolean).join(";");
-        if (style) text = `<span style="${style}">${text}</span>`;
-      } else {
-        const tag = { bold: "strong", italic: "em", underline: "u", strike: "s" }[mark.type];
-        text = `<${tag}>${text}</${tag}>`;
-      }
+      if (mark.type === "textStyle") continue;
+      const tag = { bold: "strong", italic: "em", underline: "u", strike: "s" }[mark.type];
+      text = `<${tag}>${text}</${tag}>`;
     }
     return text;
   }).join("");
@@ -33,7 +29,7 @@ function sliceInline(nodes: Inline[], start: number, end: number): Inline[] {
 
 // Measure the same HTML/CSS as the card; never truncate or repeat source content.
 export function paginateSermon(value: unknown, measure: HTMLElement) {
-  const doc = richDocumentSchema.parse(value);
+  const doc = templateDocument(richDocumentSchema.parse(value));
   const pages: string[] = [];
   let current = "";
   const fits = (html: string) => { measure.innerHTML = html; return measure.getBoundingClientRect().height <= 714.01; };

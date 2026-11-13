@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { richDocumentSchema, documentFromText, documentText } from '../src/components/ui/rich-text-editor/schemas.ts';
+import { richDocumentSchema, documentFromText, documentText, templateDocument } from '../src/components/ui/rich-text-editor/schemas.ts';
 import { photoGeometry, centeredPhotoCrop } from '../src/features/files/utils/photo-crop-geometry.ts';
 
 assert.deepEqual(centeredPhotoCrop(1600, 900, 0), { x: 0, y: 0, width: 1, height: 1 }, 'Matching photo ratios must keep the whole image instead of zooming in');
@@ -12,6 +12,8 @@ assert.equal(richDocumentSchema.safeParse({ type: 'doc', content: [{ type: 'ifra
 assert.equal(richDocumentSchema.safeParse(documentFromText('x'.repeat(20001))).success, false);
 const doc = richDocumentSchema.parse({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'safe', marks: [{ type: 'bold' }, { type: 'italic' }, { type: 'underline' }, { type: 'strike' }, { type: 'textStyle', attrs: { color: 'rgb(185, 35, 48)', fontSize: '18px' } }] }] }] });
 assert.equal(doc.content[0].content[0].marks[4].attrs.color, '#B92330');
+const fixed = templateDocument(doc);
+assert.deepEqual(fixed.content[0].content[0].marks.map(mark => mark.type), ['bold', 'italic', 'underline', 'strike']);
 console.log('PASS: rich document, preserved newlines, allowed marks, normalized colors, hostile CSS/nodes, text limit');
 for (const [width, height] of [[1200, 800], [800, 1200], [100, 100]]) {
   for (const rotation of [0, 90, 180, 270]) {

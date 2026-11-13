@@ -1,8 +1,5 @@
 import { z } from "zod";
-import type { DefaultValues } from "react-hook-form";
 
-export const colorPresets = ["#333D4B", "#737373", "#B92330", "#EA580C", "#CA8A04", "#15803D", "#0F766E", "#2563EB", "#7C3AED", "#DB2777"];
-export const fontSizes = [10, 12, 14, 16, 18, 20, 24, 28, 32];
 export const hexColorSchema = z.string().regex(/^#[0-9a-f]{6}$/i, "#RRGGBB 형식으로 입력해 주세요").transform(value => value.toUpperCase());
 export const storedColorSchema = z.string().transform((value, ctx) => {
   const rgb = /^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/.exec(value);
@@ -35,6 +32,7 @@ export function documentFromText(text: string): RichDocument {
 export function documentText(doc: { content: { content?: { type: string; text?: string }[] }[] }) {
   return doc.content.map(p => (p.content ?? []).map(n => n.type === "hardBreak" ? "\n" : n.text ?? "").join("")).join("\n");
 }
-export const richToolbarSchema = z.object({ color: hexColorSchema, fontSize: z.string() });
-export type RichToolbarData = z.input<typeof richToolbarSchema>;
-export const richToolbarDefaults: DefaultValues<RichToolbarData> = { color: colorPresets[0], fontSize: "16" };
+// Accept validated legacy styles when reading, but use template typography everywhere.
+export function templateDocument(doc: RichDocument): RichDocument {
+  return { ...doc, content: doc.content.map(paragraph => ({ ...paragraph, content: paragraph.content?.map(node => node.type === "text" ? { ...node, marks: node.marks?.filter(mark => mark.type !== "textStyle") } : node) })) };
+}

@@ -1,4 +1,5 @@
 "use server";
+import { templateDocument } from "@/components/ui/rich-text-editor/schemas";
 import { revalidatePath } from "next/cache";
 import { withUser } from "@/lib/supabase/with-user";
 import { databaseFailure, invalidInput, type Result } from "@/lib/result";
@@ -19,7 +20,7 @@ export async function saveWeekly(input: unknown): Promise<Result<WeeklyRecord>> 
   return withUser(async db => {
     const { error } = await db.rpc("save_weekly", {
       p_id: ref?.id ?? undefined, p_date: values.date, p_sections: values.sections,
-      p_sermon: { id: ref?.sermon?.id ?? null, values: { ...values.sermon, date: values.sermon.date || null } },
+      p_sermon: { id: ref?.sermon?.id ?? null, values: { ...values.sermon, content: templateDocument(values.sermon.content), date: values.sermon.date || null } },
       p_families: values.families.map(({ id, name, photo_id, photo_edit, leader_name, leader_answer, members }) => ({ id: id ?? null, name, photo_id, photo_edit: photo_id ? photo_edit : null, leader_name, leader_answer, members })),
       p_senders: (values.senders ?? []).map(({ id, name, generation, group_name, date, prayer }) => ({ id: id ?? null, name, generation, group_name, date: date || null, prayer })),
     });

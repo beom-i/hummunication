@@ -64,7 +64,7 @@ export async function verifyRecoveredSave(page, origin) {
 }
 
 export async function verifySaveConflict(page) {
-  const error = { code: "CONFLICT", message: "이 발행일의 주보가 이미 있어요. 저장된 주보를 열어 이어서 편집해 주세요", fields: { "values.date": ["이 발행일의 주보가 이미 있어요"] } };
+  const error = { code: "CONFLICT", message: "이 발행일의 주보가 이미 있어요. 저장된 주보를 열어 이어서 편집해 주세요", fields: { "values.date": ["이 발행일의 주보가 이미 있어요. 저장된 주보를 열어 이어서 편집해 주세요"] } };
   await page.evaluate(error => {
     window.__conflictFetch = window.fetch;
     window.fetch = async (...args) => {

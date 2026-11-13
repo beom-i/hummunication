@@ -3,7 +3,7 @@
 import { bulletinTitle } from "@/features/bulletins/utils/format";
 import Image from "next/image";
 import { useFormContext } from "react-hook-form";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import type { WeeklyFormData } from "../schemas";
 import { upcomingPublishDates } from "../utils/publish-dates";
 
@@ -15,7 +15,7 @@ export function PublishDate({ lockedDate }: { lockedDate?: string }) {
 
   return (
     <section className="mx-auto mt-[62px] w-full max-w-[528px] px-6 max-md:mt-12">
-        <fieldset className="w-full">
+        <fieldset className="w-full" aria-invalid={!!errors.date} aria-describedby={errors.date ? "weekly-form-errors" : undefined}>
           <legend className="sr-only">주보 발행 날짜</legend>
           <FieldGroup className="gap-4">
             {options.map((option) => (
@@ -29,7 +29,6 @@ export function PublishDate({ lockedDate }: { lockedDate?: string }) {
               </Field>
             ))}
           </FieldGroup>
-          <FieldError errors={[errors.date]} />
         </fieldset>
     </section>
   );
