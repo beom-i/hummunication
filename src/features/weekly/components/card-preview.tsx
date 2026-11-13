@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -15,9 +15,9 @@ export function CardPreview({ label, navigationLabel, index, count, onNavigate, 
     <h2 className="mb-4 text-lg font-bold">카드뉴스 미리보기</h2>
     <div className="weekly-preview-stage px-6 py-7">
       <div className="relative px-10">
-        <Button variant="outline" size="icon-lg" className="preview-nav left-0 rounded-full" aria-label={`이전 ${navigationLabel}`} disabled={index === 0} onClick={() => onNavigate(index - 1)}><ChevronLeft /></Button>
+        <Button variant="outline" size="icon-lg" className="preview-nav weekly-card-arrow left-0" aria-label={`이전 ${navigationLabel}`} disabled={index === 0} onClick={() => onNavigate(index - 1)}><Image src="/images/weekly/23c16.svg" alt="" width={20} height={20} /></Button>
         <div className="mx-auto w-full max-w-[300px]">{children}</div>
-        <Button variant="outline" size="icon-lg" className="preview-nav right-0 rounded-full" aria-label={`다음 ${navigationLabel}`} disabled={index + 1 >= count} onClick={() => onNavigate(index + 1)}><ChevronRight /></Button>
+        <Button variant="outline" size="icon-lg" className="preview-nav weekly-card-arrow right-0" aria-label={`다음 ${navigationLabel}`} disabled={index + 1 >= count} onClick={() => onNavigate(index + 1)}><Image src="/images/weekly/12acf.svg" alt="" width={20} height={20} /></Button>
       </div>
       <p className="mx-auto mt-3 w-fit rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground" aria-live="polite">{index + 1}/{count}</p>
     </div>

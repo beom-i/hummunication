@@ -48,6 +48,7 @@ export async function runPhotoFieldRegression(page, screenshotDir) {
       await page.snapshot(); await page.click('[role="dialog"] button:text-is("편집 적용")');
       await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
       const original = await source(); assert.ok(original.startsWith('data:image/png;base64,'));
+      assert.equal(await page.evaluate(() => document.querySelector('[data-photo-field] svg').getAttribute('viewBox')), '0 0 960 540', 'A matching 16:9 photo must keep the full image on first apply');
       assert.ok(await page.evaluate(label => {
         const edit = document.querySelector(`[aria-label="${label} 편집"]`).getBoundingClientRect();
         const change = document.querySelector(`[aria-label="${label} 바꾸기"]`).getBoundingClientRect();

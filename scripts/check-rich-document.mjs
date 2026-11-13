@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { richDocumentSchema, documentFromText, documentText } from '../src/components/ui/rich-text-editor/schemas.ts';
 import { photoGeometry, centeredPhotoCrop } from '../src/features/files/utils/photo-crop-geometry.ts';
 
+assert.deepEqual(centeredPhotoCrop(1600, 900, 0), { x: 0, y: 0, width: 1, height: 1 }, 'Matching photo ratios must keep the whole image instead of zooming in');
+
 assert.equal(documentText(richDocumentSchema.parse(documentFromText('A\n\n한글 😀'))), 'A\n\n한글 😀');
 for (const attrs of [{ color: 'red;position:fixed' }, { color: '<script>' }, { fontSize: '100px' }, { fontSize: 'url(x)' }]) {
   assert.equal(richDocumentSchema.safeParse({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'test', marks: [{ type: 'textStyle', attrs }] }] }] }).success, false);

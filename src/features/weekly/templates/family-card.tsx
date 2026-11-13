@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { Fragment } from "react";
 import type { WeeklyFormData } from "../schemas";
 import { TemplateAsset, TemplateFrame } from "./template-frame";
 import { newFamily } from "../schemas";
@@ -43,7 +44,7 @@ export function FamilyCard({ index, groupIndex = 0 }: { index: number; groupInde
       <p className="family-photo-group" data-fit-width data-fit-text>( {group.name} )</p>
       <svg className="family-photo-image" width="588" height="331" viewBox="0 0 588 331">{group.photo && <CroppedPhoto source={group.photo} edit={group.photo_edit} aspect={16 / 9} width={588} height={331} label="순 단체사진" />}</svg>
       <TemplateAsset name="3bdbb.svg" x={0} y={740} width={720} height={2} />
-      <p className="family-photo-names" data-fit-height="60" data-fit-text>{people.map(person => person.name).filter(Boolean).join(" ㅣ ")}</p>
+      <p className="family-photo-names" data-fit-height="60" data-fit-text>{people.map(person => person.name).filter(Boolean).map((name, index) => <Fragment key={index}>{index > 0 && <span aria-hidden="true">ㅣ</span>}<span>{name}</span></Fragment>)}</p>
     </>;
   }
   return <TemplateFrame label={`새가족 문답 ${index === 0 ? "표지" : `${index + 1}페이지`}`} className={`family-card ${variant}`}>
