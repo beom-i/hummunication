@@ -82,7 +82,8 @@ export async function runContentEditorRegression(page, screenshotDir) {
         if (width >= 1200) {
           assert.ok(geometry.preview.left >= geometry.form.right, `${view}: preview must be right of form`);
           assert.ok(Math.abs(geometry.form.top - geometry.preview.top) < 1, `${view}: top edges must align`);
-        } else assert.ok(geometry.preview.top >= geometry.form.bottom, `${view}: mobile/tablet form must come first`);
+        } else if (['family-card-edit', 'sender-edit'].includes(view)) assert.ok(geometry.preview.bottom <= geometry.form.top, `${view}: mobile/tablet preview must stay above the form`);
+        else assert.ok(geometry.preview.top >= geometry.form.bottom, `${view}: form must come first`);
         assert.equal(await page.evaluate(() => !!document.querySelector('.weekly-footer')), true, 'All editors must share the same footer');
         await page.evaluate(() => document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).forEach(a => a.finish()));
         if (screenshotDir) await page.screenshot({ path: `${screenshotDir}/${width}-${view}.png`, fullPage: width < 1200 });

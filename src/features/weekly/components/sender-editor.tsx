@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +35,7 @@ export function SenderEditor({ index }: { index: number }) {
     </CardPreview>
   }>
     <section className="family-form-card sender-form-card flex flex-col gap-6" aria-label="파송자 정보 입력">
-      {fields.map(({ name, label, placeholder }) => <Field key={name} className="gap-3"><FieldLabel htmlFor={`sender-${name}`}>{label}</FieldLabel>{name === "date" ? <Controller control={control} name={`senders.${index}.date`} render={({ field }) => <DatePicker id="sender-date" name={field.name} ref={field.ref} value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} aria-invalid={!!senderErrors?.date} />} /> : <Input id={`sender-${name}`} inputMode={name === "generation" ? "numeric" : undefined} variant="filled" placeholder={placeholder} {...register(`senders.${index}.${name}`)} aria-invalid={!!senderErrors?.[name]} />}<FieldError errors={[senderErrors?.[name]]} /></Field>)}
+      {fields.map(({ name, label, placeholder }) => <Field key={name} className="gap-3"><FieldLabel htmlFor={`sender-${name}`}>{label}</FieldLabel>{name === "date" ? <Controller control={control} name={`senders.${index}.date`} render={({ field }) => <DatePicker id="sender-date" name={field.name} ref={field.ref} value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} aria-invalid={!!senderErrors?.date} aria-describedby="sender-date-description" />} /> : <Input id={`sender-${name}`} inputMode={name === "generation" ? "numeric" : undefined} variant="filled" placeholder={placeholder} {...register(`senders.${index}.${name}`)} aria-invalid={!!senderErrors?.[name]} aria-describedby={name === "group_name" ? "sender-group_name-description" : undefined} />}{(name === "group_name" || name === "date") && <FieldDescription id={`sender-${name}-description`}>관리용 정보예요. 카드에는 표시되지 않아요.</FieldDescription>}<FieldError errors={[senderErrors?.[name]]} /></Field>)}
       <Field className="gap-3"><FieldLabel htmlFor="sender-prayer">기도제목</FieldLabel><Textarea id="sender-prayer" variant="filled" className="min-h-40" placeholder="기도제목을 입력해 주세요" {...register(`senders.${index}.prayer`)} aria-invalid={!!senderErrors?.prayer} /><FieldError errors={[senderErrors?.prayer]} /></Field>
     </section>
   </ContentEditorLayout>;

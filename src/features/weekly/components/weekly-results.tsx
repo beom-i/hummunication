@@ -34,11 +34,11 @@ export function WeeklyResults({ detail = false }: { detail?: boolean }) {
     if (sections.includes("thumbnail")) artifacts.push({ id: "bulletin-thumbnail", category: "주보 썸네일", label: "주보 썸네일", page: `${month}월 주보`, element: <BulletinCard /> });
     if (sections.includes("cover")) artifacts.push({ id: "bulletin-cover", category: "주보 표지", label: "주보 표지", page: `${month}월 주보`, element: <BulletinCard cover /> });
     if (sections.includes("sermon")) for (let index = 0; index <= pages.length; index++) artifacts.push({ id: `sermon-${index + 1}`, category: "설교 정리", label: "설교 정리", page: `${index + 1}페이지`, element: <SermonCard index={index} /> });
+    if (sections.includes("family") && families.length) artifacts.push({ id: "family-cover", category: "새가족 문답", label: "새가족 문답", page: "공통 표지", element: <FamilyCard index={0} /> });
     if (sections.includes("family")) families.forEach((group, groupIndex) => {
-      for (let index = 0; index < 2 + (cardPages.families[groupIndex]?.length ?? 1); index++) {
+      for (let index = 1; index < 2 + (cardPages.families[groupIndex]?.length ?? 1); index++) {
         let label = `문답 ${index - 1}`;
-        if (index === 0) label = "표지";
-        else if (index === 1) label = "썸네일";
+        if (index === 1) label = "썸네일";
         artifacts.push({ id: `family-${groupIndex + 1}-${index + 1}`, category: "새가족 문답", label: "새가족 문답", page: `${group.name} · ${label}`, element: <FamilyCard index={index} groupIndex={groupIndex} /> });
       }
     });

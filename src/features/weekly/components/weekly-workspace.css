@@ -94,6 +94,7 @@
 .weekly-result-landscape > .news-card { width: calc(100% - 22px); }
 .sender-card { background: var(--sender-paper); color: var(--sender-foreground); }
 .preview-nav { position: absolute; top: 50%; z-index: 10; transform: translateY(-50%); }
+.weekly-editor-layout > .weekly-paged-preview { position: sticky; top: 24px; }
 @media (max-width: 1199px) {
   .weekly-sermon-layout { width: calc(100% - 64px); }
   .weekly-workspace[data-progress-open="true"] .weekly-sermon-layout { padding-right: 0; }
@@ -101,6 +102,11 @@
   .progress-sidebar { top: 24px; right: 20px; width: 220px; }
   .weekly-sermon-layout { flex-direction: column; }
   .weekly-sermon-layout > div, .weekly-preview-panel { width: 100%; }
+  .weekly-editor-layout > .weekly-paged-preview { order: -1; top: 8px; z-index: 10; padding: 12px; }
+  .weekly-editor-layout > .weekly-paged-preview > h2 { margin-bottom: 8px; font-size: 14px; }
+  .weekly-paged-preview .weekly-preview-stage { padding: 8px; }
+  .weekly-editor-layout .weekly-preview-card { max-width: 112px; }
+  .weekly-paged-preview .weekly-preview-stage > p { margin-top: 6px; }
   [data-progress-open="true"] .sermon-preview-grid { padding-inline: 0; }
 }
 @media (min-width: 768px) and (max-width: 1023px) {

@@ -26,6 +26,7 @@ import { ProgressSidebar } from "./progress-sidebar";
 import { useWeeklyTransition } from "../hooks/use-weekly-transition";
 import { weeklyHeading, weeklyLocation, weeklyIndicatorStep, boundedEntryIndex } from "../utils/workflow";
 import { sidebarOffset } from "@/features/workspace/utils/sidebar-offset";
+import { upcomingPublishDates } from "../utils/publish-dates";
 import { WeeklyStepContent } from "./weekly-step-content";
 import "./weekly-workspace.css";
 import { weeklyDefaultValues, weeklyDraftSchema, weeklySchema, type WeeklyFormData } from "../schemas";
@@ -82,7 +83,8 @@ export function WeeklyWorkspace() {
             else { setError("root", { type: "load", message: result.error.message }); }
           }
         } else {
-          reset(weeklyDefaultValues);
+          const date = upcomingPublishDates()[0];
+          reset({ ...weeklyDefaultValues, date, sermon: { ...weeklyDefaultValues.sermon, date } });
           const saved = localStorage.getItem(legacyDraftKey);
           if (saved) {
             const result = legacyWeeklySchema.safeParse(JSON.parse(saved));
