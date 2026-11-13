@@ -5,7 +5,7 @@ assert.equal(result.success, false);
 assert.deepEqual(result.error.issues[0].path, ['bible']);
 console.log('PASS: sermon input reports the bible field instead of accepting an oversized value');
 
-const { loadSavedBulletins, savedBulletinsKey } = await import('../src/components/bulletins/local-store.ts');
+const { loadSavedBulletins, savedBulletinsKey } = await import('../src/features/bulletins/utils/local-store.ts');
 const oldDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '이전 정리 내용' }] }] };
 const oldRecord = { id: '2035-01-07', updatedAt: '2035-01-07T00:00:00.000Z', data: {
   date: '2035-01-07', sections: ['sermon'], sermon: { date: '2035-01-07', speaker: '', title: '', passage: '사사기 7:1-8', document: oldDocument },
@@ -42,7 +42,7 @@ const invalidPhoto = await uploadPhoto({});
 assert.equal(invalidPhoto.ok, false);
 assert.equal(invalidPhoto.error.code, 'INVALID_INPUT');
 console.log('PASS: malformed upload requests return the common validation error');
-const { savePendingWeekly, loadPendingWeekly } = await import('../src/components/bulletins/local-store.ts');
+const { savePendingWeekly, loadPendingWeekly } = await import('../src/features/bulletins/utils/local-store.ts');
 const recoveryStorage = new Map();
 globalThis.localStorage = { getItem: key => recoveryStorage.get(key) ?? null, setItem: (key,value) => recoveryStorage.set(key,value) };
 const oldRef = { id: '00000000-0000-4000-8000-000000000010', sermon: { id: '00000000-0000-4000-8000-000000000011' } };

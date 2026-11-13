@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:content": "node --experimental-strip-types scripts/check-rich-document.mjs",
     "test:validation": "node --experimental-strip-types --conditions=react-server --import ./tests/register.mjs tests/validation.mjs",
+    "test:workflow": "node --experimental-strip-types --import ./tests/register.mjs tests/weekly-workflow.mjs",
     "test:weekly": "node --experimental-strip-types --conditions=react-server --import ./tests/register.mjs tests/weekly-mockup.mjs",
     "test:photos": "node --experimental-strip-types --conditions=react-server --import ./tests/register.mjs tests/photo-cleanup.mjs",
     "test:backend": "node tests/run-backend.mjs"

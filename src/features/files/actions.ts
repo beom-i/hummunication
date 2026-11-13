@@ -16,7 +16,10 @@ export async function uploadPhoto(input: unknown): Promise<Result<{ id: string }
     const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
     const webp = new TextDecoder().decode(bytes.slice(0,4)) === "RIFF" && new TextDecoder().decode(bytes.slice(8,12)) === "WEBP";
     if (!(file.type === "image/png" && png || file.type === "image/jpeg" && jpeg || file.type === "image/webp" && webp)) return failure("INVALID_INPUT", "사진 파일 형식을 확인해 주세요");
-    const path = `${userId}/photos/${crypto.randomUUID()}.${png ? "png" : jpeg ? "jpg" : "webp"}`;
+    let extension = "webp";
+    if (png) extension = "png";
+    else if (jpeg) extension = "jpg";
+    const path = `${userId}/photos/${crypto.randomUUID()}.${extension}`;
     const uploaded = await db.storage.from("uploads").upload(path, file, { contentType: file.type, upsert: false });
     if (uploaded.error) return failure("INTERNAL_ERROR", "사진을 올리지 못했어요. 다시 시도해 주세요");
     const { data, error } = await db.rpc("register_file", { p_path: path });

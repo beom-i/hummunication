@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { WeeklyMockup } from "@/components/weekly/weekly-mockup";
-import { WeeklyLoadingScreen } from "@/components/weekly/weekly-skeleton";
+import { WeeklyWorkspace } from "@/features/weekly/components/weekly-workspace";
+import { WeeklyLoadingScreen } from "@/features/weekly/components/weekly-skeleton";
 
 export default function WeeklyPage() {
-  return <Suspense fallback={<WeeklyLoadingScreen />}><WeeklyMockup /></Suspense>;
+  return <Suspense fallback={<WeeklyLoadingScreen />}><WeeklyWorkspace /></Suspense>;
 }

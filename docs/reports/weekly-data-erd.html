@@ -689,7 +689,7 @@ const screens=[
   "notes": "로딩 전용 테이블 없음. 루트 리다이렉트에도 DB 값은 필요하지 않습니다.",
   "sources": [
    "src/app/page.tsx",
-   "src/components/home/entry-splash.tsx"
+   "src/features/workspace/components/entry-splash.tsx"
   ]
  },
  {
@@ -733,8 +733,8 @@ const screens=[
   ],
   "notes": "정렬 기준은 발행일 내림차순. 최근 4건/전체 보기는 조회·UI 설정입니다.",
   "sources": [
-   "src/components/home/home-dashboard.tsx",
-   "src/components/bulletins/local-store.ts"
+   "src/features/home/components/home-dashboard.tsx",
+   "src/features/bulletins/utils/local-store.ts"
   ]
  },
  {
@@ -753,8 +753,8 @@ const screens=[
   ],
   "notes": "로딩 상태는 업무 테이블에 저장하지 않습니다.",
   "sources": [
-   "src/components/home/work-intro.tsx",
-   "src/components/weekly/weekly-mockup.tsx"
+   "src/features/workspace/components/work-intro.tsx",
+   "src/features/weekly/components/weekly-workspace.tsx"
   ]
  },
  {
@@ -785,8 +785,8 @@ const screens=[
   ],
   "notes": "활성 날짜당 한 주보: date 부분 UNIQUE. 기존 편집에서는 날짜가 고정됩니다.",
   "sources": [
-   "src/components/weekly/publish-date.tsx",
-   "src/components/weekly/weekly-mockup.tsx"
+   "src/features/weekly/components/publish-date.tsx",
+   "src/features/weekly/components/weekly-workspace.tsx"
   ]
  },
  {
@@ -821,8 +821,8 @@ const screens=[
   ],
   "notes": "실제 콘텐츠는 설교 정리·새가족 문답·파송자 세 개다. 다섯 체크는 출력 옵션이다. 날짜 기반 썸네일·주보 표지는 앞 1·2페이지. 체크 해제는 원본 삭제가 아니다.",
   "sources": [
-   "src/components/weekly/configuration.tsx",
-   "src/components/weekly/schemas.ts"
+   "src/features/weekly/components/configuration.tsx",
+   "src/features/weekly/schemas.ts"
   ]
  },
  {
@@ -885,8 +885,8 @@ const screens=[
   ],
   "notes": "설교자는 입력 텍스트이며 Auth 사용자와 강제 연결하지 않습니다. 미완성 저장과 단계 진행 검증은 구분합니다.",
   "sources": [
-   "src/components/weekly/sermon-editor.tsx",
-   "src/components/weekly/schemas.ts"
+   "src/features/weekly/components/sermon-editor.tsx",
+   "src/features/weekly/schemas.ts"
   ]
  },
  {
@@ -927,8 +927,8 @@ const screens=[
   "notes": "문서 최대 20,000자·2,000문단. Enter의 빈 문단도 보존. 사용자 임의 HTML/CSS를 저장하지 않습니다.",
   "sources": [
    "src/components/ui/rich-text-editor/schemas.ts",
-   "src/components/weekly/sermon-pagination.tsx",
-   "src/components/weekly/sermon-editor.tsx"
+   "src/features/weekly/utils/sermon-pagination.ts",
+   "src/features/weekly/components/sermon-editor.tsx"
   ]
  },
  {
@@ -982,8 +982,8 @@ const screens=[
   ],
   "notes": "주보당 family 최대 20개. 독립 문답 묶음의 families 배열을 읽고 저장한다. 별도 순 ID·position 컬럼은 두지 않는다.",
   "sources": [
-   "src/components/weekly/family-editor.tsx",
-   "src/components/weekly/weekly-mockup.tsx"
+   "src/features/weekly/components/family-editor.tsx",
+   "src/features/weekly/components/weekly-workspace.tsx"
   ]
  },
  {
@@ -1048,8 +1048,8 @@ const screens=[
   ],
   "notes": "순장 한 명, 순원 최대 30명, 답변 3,000자 이내. 문답의 members 배열은 편집 계정 테이블이 아닌 콘텐츠입니다.",
   "sources": [
-   "src/components/weekly/family-editor.tsx",
-   "src/components/weekly/schemas.ts"
+   "src/features/weekly/components/family-editor.tsx",
+   "src/features/weekly/schemas.ts"
   ]
  },
  {
@@ -1093,9 +1093,9 @@ const screens=[
   ],
   "notes": "비율 119:71. 크롭 전용 테이블·별도 편집 이미지 파일은 만들지 않습니다.",
   "sources": [
-   "src/components/weekly/photo-crop.tsx",
-   "src/components/weekly/photo-crop-geometry.ts",
-   "src/components/weekly/schemas.ts"
+   "src/features/files/components/photo-crop.tsx",
+   "src/features/files/utils/photo-crop-geometry.ts",
+   "src/features/weekly/schemas.ts"
   ]
  },
  {
@@ -1127,8 +1127,8 @@ const screens=[
   ],
   "notes": "family 문답 묶음은 독립 조회·편집할 수 있다. 그 안의 순·답변은 JSON 배열이다. 현재 날짜·주차 출력은 weekly.date를 함께 사용한다.",
   "sources": [
-   "src/components/weekly/family-editor.tsx",
-   "src/components/weekly/preview-cards.tsx"
+   "src/features/weekly/components/family-editor.tsx",
+   "src/features/weekly/templates/family-card.tsx"
   ]
  },
  {
@@ -1192,8 +1192,8 @@ const screens=[
   ],
   "notes": "결과물 전용 테이블 없음. 파송자 안내만 표시. 현재 모든 단계 저장은 로컬이며 서버 연결은 제안입니다.",
   "sources": [
-   "src/components/weekly/weekly-results.tsx",
-   "src/components/weekly/export-cards.ts"
+   "src/features/weekly/components/weekly-results.tsx",
+   "src/features/weekly/utils/export-cards.ts"
   ]
  },
  {
@@ -1245,8 +1245,8 @@ const screens=[
   ],
   "notes": "현재 URL의 /bulletins는 유지된 화면 경로입니다. 운영 테이블은 weekly. 날짜 조회로 기존 상세 링크를 이어갈 수 있습니다. weekly와 연결한 sermon/family를 함께 조회해 복원한다.",
   "sources": [
-   "src/components/bulletins/bulletin-detail.tsx",
-   "src/components/bulletins/local-store.ts"
+   "src/features/bulletins/components/bulletin-detail.tsx",
+   "src/features/bulletins/utils/local-store.ts"
   ]
  },
  {
@@ -1277,9 +1277,9 @@ const screens=[
   ],
   "notes": "서버 편집 권한을 증명하지 않습니다. 원격 저장 인증 정책은 별도로 결정해야 합니다.",
   "sources": [
-   "src/components/bulletins/bulletin-detail.tsx",
-   "src/components/bulletins/format.ts",
-   "src/components/bulletins/local-store.ts"
+   "src/features/bulletins/components/bulletin-detail.tsx",
+   "src/features/bulletins/utils/format.ts",
+   "src/features/bulletins/utils/local-store.ts"
   ]
  },
  {
@@ -1310,8 +1310,8 @@ const screens=[
   ],
   "notes": "표시 이름 외에 별도 프로필 요구가 없어 members 테이블을 생략하는 제안입니다. 팀원 관리·독립 카드뉴스 화면은 아직 미정입니다.",
   "sources": [
-   "src/components/home/app-sidebar.tsx",
-   "src/components/home/workspace-shell.tsx"
+   "src/features/workspace/components/app-sidebar.tsx",
+   "src/features/workspace/components/workspace-shell.tsx"
   ]
  },
  {
@@ -1344,8 +1344,8 @@ const screens=[
   ],
   "notes": "사이트 진입은 공개로 유지됩니다. 로그인 시점을 이 보고서에서 변경하지 않습니다.",
   "sources": [
-   "src/components/auth/login-form.tsx",
-   "src/components/auth/schemas.ts"
+   "src/features/auth/components/login-form.tsx",
+   "src/features/auth/components/schemas.ts"
   ]
  },
  {
@@ -1371,8 +1371,8 @@ const screens=[
   ],
   "notes": "업무 DB에 이메일 발송·비밀번호 테이블을 추가하지 않습니다.",
   "sources": [
-   "src/components/auth/forgot-password-form.tsx",
-   "src/components/auth/schemas.ts"
+   "src/features/auth/components/forgot-password-form.tsx",
+   "src/features/auth/components/schemas.ts"
   ]
  },
  {
@@ -1391,8 +1391,8 @@ const screens=[
   ],
   "notes": "현재 최소 8자. 재설정 후 /protected로 이동하는 기존 점검 흐름입니다.",
   "sources": [
-   "src/components/auth/update-password-form.tsx",
-   "src/components/auth/schemas.ts"
+   "src/features/auth/components/update-password-form.tsx",
+   "src/features/auth/components/schemas.ts"
   ]
  },
  {
@@ -1531,7 +1531,7 @@ const screens=[
   "notes": "일반 컬럼으로 저장하며 마지막 저장이 반영됩니다. 미완성 저장과 단계 이동의 필수 검증을 구분합니다.",
   "sources": [
    "src/features/sender/schemas.ts",
-   "src/components/weekly/sender-editor.tsx"
+   "src/features/weekly/components/sender-editor.tsx"
   ]
  }
 ];

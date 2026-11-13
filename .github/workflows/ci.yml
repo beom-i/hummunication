@@ -23,6 +23,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test:validation
+      - run: pnpm test:workflow
       - run: pnpm test:weekly
       - run: pnpm test:photos
       - run: pnpm test:content

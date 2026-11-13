@@ -30,6 +30,10 @@ export function DatePicker({ value, onValueChange, className, ...props }: DatePi
         onValueChange(format(date, "yyyy-MM-dd"));
         setOpen(false);
       }} className="w-full rounded-2xl [--cell-size:min(40px,calc((var(--radix-popover-trigger-width)_-_24px)/7))]" classNames={{ root: "w-full", month_grid: "w-full table-fixed", caption_label: "text-lg font-semibold", day_button: "text-base sm:text-lg" }} />
+      <Button type="button" variant="ghost" disabled={!selected} className="mx-3 mb-3" onClick={() => {
+        onValueChange("");
+        setOpen(false);
+      }}>날짜 지우기</Button>
     </PopoverContent>
   </Popover>;
 }

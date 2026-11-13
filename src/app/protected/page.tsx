@@ -1,4 +1,4 @@
-import { LogoutButton } from "@/components/auth/logout-button";
+import { LogoutButton } from "@/features/auth/components/logout-button";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
