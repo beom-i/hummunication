@@ -32,9 +32,7 @@ export function findBulletin(id: string) {
 }
 
 export function recentBulletins() {
-  const records = new Map(mockBulletins.map(record => [record.id, sampleBulletin(record.id)!]));
-  for (const record of loadSavedBulletins()) records.set(record.id, record);
-  return [...records.values()].filter(record => !isBulletinMigrated(record.id)).sort((a, b) => b.id.localeCompare(a.id));
+  return loadSavedBulletins().filter(record => !isBulletinMigrated(record.id)).sort((a, b) => b.id.localeCompare(a.id));
 }
 
 // shortcut: date-code UI lock only; replace with server authorization when DB storage is connected.

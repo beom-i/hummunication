@@ -127,3 +127,12 @@ assert.ok(fittedCrop.x + fittedCrop.width <= legacyPhotoEdit.crop.x + legacyPhot
 assert.ok(fittedCrop.y + fittedCrop.height <= legacyPhotoEdit.crop.y + legacyPhotoEdit.crop.height + 0.00001);
 assert.ok(Math.abs(fittedCrop.width * legacyPhotoEdit.sourceHeight / (fittedCrop.height * legacyPhotoEdit.sourceWidth) - 16 / 9) < 0.00001);
 console.log("Legacy family crops remain readable and fit the final photo frame without losing original files.");
+
+const { recentBulletins, savedBulletinsKey, markBulletinMigrated } = await import("../src/components/bulletins/local-store.ts");
+assert.deepEqual(recentBulletins().map(record => record.id), [], "An empty browser must not advertise sample bulletins as saved work");
+const localRecord = { id: saved.date, data: saved, updatedAt: "2035-01-07T00:00:00.000Z" };
+storage.set(savedBulletinsKey, JSON.stringify([localRecord]));
+assert.deepEqual(recentBulletins().map(record => record.id), [saved.date], "The anonymous fallback must retain real local records without adding mock entries");
+markBulletinMigrated(saved.date);
+assert.deepEqual(recentBulletins(), [], "Already migrated local records must not reappear");
+console.log("Recent bulletins contain actual local records only, without mock or migrated entries.");
