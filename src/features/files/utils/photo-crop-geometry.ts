@@ -12,7 +12,7 @@ export function photoGeometry(width: number, height: number, rotation: number) {
 
 export function centeredPhotoCrop(width: number, height: number, rotation: number, aspect = 16 / 9) {
   const bounds = photoGeometry(width, height, rotation);
-  const cropWidth = Math.min(0.9, 0.9 * bounds.height * aspect / bounds.width);
+  const cropWidth = Math.min(1, bounds.height * aspect / bounds.width);
   const cropHeight = cropWidth * bounds.width / (aspect * bounds.height);
   return { x: (1 - cropWidth) / 2, y: (1 - cropHeight) / 2, width: cropWidth, height: cropHeight };
 }

@@ -22,7 +22,7 @@ function SermonFields() {
   const { control, register, watch, setValue, setError, clearErrors, formState: { errors } } = useFormContext<WeeklyFormData>();
   const thumbnailId = watch("sermon.thumbnailId");
   const thumbnailEdit = watch("sermon.thumbnailEdit");
-  return <div className="flex w-full flex-col gap-5">
+  return <div className="sermon-fields flex w-full flex-col gap-5">
     <Field data-invalid={!!errors.sermon?.date} className="gap-2">
       <FieldLabel htmlFor="sermon-date" className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">설교 날짜</FieldLabel>
       <Controller control={control} name="sermon.date" render={({ field }) => <DatePicker id="sermon-date" name={field.name} ref={field.ref} value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} aria-invalid={!!errors.sermon?.date} />} />

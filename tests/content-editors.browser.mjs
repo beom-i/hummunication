@@ -26,8 +26,11 @@ export async function runContentEditorRegression(page, screenshotDir) {
     await page.evaluate(values => localStorage.setItem('hummunication.weekly-draft', JSON.stringify(values)), values);
     await page.cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
     await goto('/weekly?step=2&view=families'); await settled(); await page.snapshot();
+    assert.equal(await page.evaluate(() => document.querySelector('section[aria-label="순 목록"] article img').getBoundingClientRect().width), 164, 'Figma empty-list artwork size');
     await page.click('button[aria-label="예시 1순 편집"]'); await locationIs('family-card-edit');
     assert.equal(await page.evaluate(() => !!document.querySelector('.family-photo-group')), true, 'List edit must open the combined editor directly');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('#family-name')).fontWeight), '700', 'Figma group-name weight');
+    assert.equal(await page.evaluate(() => document.querySelector('.preview-nav').getBoundingClientRect().width), 48, 'Figma navigation button size');
     await page.fill('input[name="families.0.name"]', '변경한 예시 순');
     await page.waitForFunction(() => document.querySelector('.family-photo-group').textContent.includes('변경한 예시 순'));
     await page.click('button[aria-label="다음 새가족 카드"]');
@@ -45,6 +48,7 @@ export async function runContentEditorRegression(page, screenshotDir) {
     assert.equal(await page.evaluate(() => document.querySelectorAll('section[aria-label="순 목록"] > article').length), 3, 'Adding a group must open the same combined editor and retain existing groups');
     await page.click('.weekly-footer button:text-is("다음")'); await locationIs('senders');
     await page.click('button[aria-label="파송자 예시 편집"]'); await locationIs('sender-edit');
+    assert.deepEqual(await page.evaluate(() => { const s = getComputedStyle(document.querySelector('#sender-prayer')); return [s.fontSize, s.borderWidth, s.borderRadius]; }), ['16px', '0px', '10px'], 'Figma prayer input styling');
     await page.waitForFunction(() => document.querySelector('.sender-card-prayers')?.textContent.trim().length > 0);
     const first = await page.evaluate(() => document.querySelector('.sender-card-prayers').textContent);
     await page.click('button[aria-label="다음 파송자 카드"]');
@@ -54,6 +58,8 @@ export async function runContentEditorRegression(page, screenshotDir) {
     await page.click('.weekly-footer button:text-is("다음")');
     await page.waitForSelector('[data-artifact-id]', { timeout: 30000 });
     assert.equal(new URL(await page.url()).searchParams.get('step'), '3');
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent === '전부 ZIP으로 받기').getBoundingClientRect().height), 48, 'Figma ZIP button height');
+    assert.ok(await page.evaluate(() => { const a = document.querySelector('[data-artifact-id="bulletin-thumbnail"] .weekly-result-thumb').getBoundingClientRect(); const b = document.querySelector('[data-artifact-id="bulletin-cover"] .weekly-result-thumb').getBoundingClientRect(); return Math.abs(a.height - b.height) < 1; }), 'Landscape artwork and portrait cards share a 4:5 gallery frame');
 
     for (const [legacy, selector] of [['family-preview', '[aria-label="순 목록"]'], ['family-edit', '.weekly-editor-layout']]) {
       await goto(`/weekly?step=2&view=${legacy}&group=0`); await settled();

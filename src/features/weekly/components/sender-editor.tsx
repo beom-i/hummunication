@@ -34,7 +34,7 @@ export function SenderEditor({ index }: { index: number }) {
       <div key={current} className="weekly-enter"><SenderCard index={index} page={current} /></div>
     </CardPreview>
   }>
-    <section className="family-form-card flex flex-col gap-6" aria-label="파송자 정보 입력">
+    <section className="family-form-card sender-form-card flex flex-col gap-6" aria-label="파송자 정보 입력">
       {fields.map(({ name, label, placeholder }) => <Field key={name} className="gap-3"><FieldLabel htmlFor={`sender-${name}`}>{label}</FieldLabel>{name === "date" ? <Controller control={control} name={`senders.${index}.date`} render={({ field }) => <DatePicker id="sender-date" name={field.name} ref={field.ref} value={field.value ?? ""} onValueChange={field.onChange} onBlur={field.onBlur} aria-invalid={!!senderErrors?.date} />} /> : <Input id={`sender-${name}`} inputMode={name === "generation" ? "numeric" : undefined} variant="filled" placeholder={placeholder} {...register(`senders.${index}.${name}`)} aria-invalid={!!senderErrors?.[name]} />}<FieldError errors={[senderErrors?.[name]]} /></Field>)}
       <Field className="gap-3"><FieldLabel htmlFor="sender-prayer">기도제목</FieldLabel><Textarea id="sender-prayer" variant="filled" className="min-h-40" placeholder="기도제목을 입력해 주세요" {...register(`senders.${index}.prayer`)} aria-invalid={!!senderErrors?.prayer} /><FieldError errors={[senderErrors?.prayer]} /></Field>
     </section>

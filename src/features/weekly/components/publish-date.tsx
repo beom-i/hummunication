@@ -27,7 +27,7 @@ export function PublishDate({ lockedDate }: { lockedDate?: string }) {
               <Field key={option.value} className="relative">
                 <input type="radio" value={option.value} id={option.value} {...register("date")} className="peer sr-only" />
                 <FieldLabel htmlFor={option.value} className="flex min-h-[63px] cursor-pointer items-center gap-2 rounded-2xl border bg-card py-[18px] pr-4 pl-5 peer-checked:min-h-16 peer-checked:border-selection-border peer-checked:bg-home-brand peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-ring">
-                  <span className="text-xl leading-[25px] font-semibold tracking-[-0.4px] group-has-checked/field:font-extrabold max-sm:text-base">{option.label}</span>
+                  <span className="text-[18px] leading-[25px] font-semibold tracking-[-0.36px] group-has-checked/field:font-extrabold max-sm:text-base">{option.label}</span>
                   <span className="ml-auto text-base leading-5 font-normal tracking-[-0.64px] text-muted-foreground group-has-checked/field:text-foreground max-sm:text-[13px]">{option.week}</span>
                   <Image src="/images/home/date-check.svg" alt="" width={24} height={24} className="hidden shrink-0 group-has-checked/field:block" />
                 </FieldLabel>
