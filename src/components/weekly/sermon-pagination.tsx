@@ -23,7 +23,8 @@ function paragraphHtml(nodes: Inline[]) {
     }
     return text;
   }).join("");
-  return `<p>${html || "<br>"}</p>`;
+  const point = nodes.find(node => node.type === "text")?.text.match(/^#(\d+)[.\s]/);
+  return `<p${point ? ` class="sermon-point${point[1] === "1" ? " sermon-point-first" : ""}"` : ""}>${html || "<br>"}</p>`;
 }
 function sliceInline(nodes: Inline[], start: number, end: number): Inline[] {
   let offset = 0;
@@ -41,10 +42,15 @@ export function paginateSermon(value: unknown, measure: HTMLElement) {
   const doc = richDocumentSchema.parse(value);
   const pages: string[] = [];
   let current = "";
-  const fits = (html: string) => { measure.innerHTML = html; return measure.getBoundingClientRect().height <= 464.01; };
-  for (const paragraph of doc.content) {
+  const fits = (html: string) => { measure.innerHTML = html; return measure.getBoundingClientRect().height <= 714.01; };
+  for (const [index, paragraph] of doc.content.entries()) {
     let nodes = paragraph.content ?? [];
+    const text = nodes.map(node => node.type === "text" ? node.text : "").join("");
+    const next = doc.content[index + 1];
+    if (current && /^#\d+[.\s]/.test(text) && next && !fits(current + paragraphHtml(nodes) + paragraphHtml(next.content ?? []))) { pages.push(current); current = ""; }
     if (fits(current + paragraphHtml(nodes))) { current += paragraphHtml(nodes); continue; }
+    const previousText = doc.content[index - 1]?.content?.map(node => node.type === "text" ? node.text : "").join("") ?? "";
+    if (current && !/^#\d+[.\s]/.test(previousText) && fits(paragraphHtml(nodes))) { pages.push(current); current = paragraphHtml(nodes); continue; }
     let length = nodes.reduce((sum, n) => sum + (n.type === "text" ? Array.from(n.text).length : 1), 0);
     if (!length) { pages.push(current); current = paragraphHtml([]); continue; }
     while (length) {
@@ -71,7 +77,7 @@ export function paginateSermon(value: unknown, measure: HTMLElement) {
 const SermonPages = createContext<{ pages: string[]; ready: boolean }>({ pages: [""], ready: false });
 export function SermonPagesProvider({ children }: { children: React.ReactNode }) {
   const { control } = useFormContext<WeeklyFormData>();
-  const doc = useWatch({ control, name: "sermon.document" });
+  const doc = useWatch({ control, name: "sermon.content" });
   const [result, setResult] = useState<{ doc: RichDocument; pages: string[] } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +89,8 @@ export function SermonPagesProvider({ children }: { children: React.ReactNode })
       const host = document.querySelector(".weekly-main") ?? document.body;
       host.append(measure);
       try {
+        await document.fonts.load(getComputedStyle(measure).font).catch(() => {});
+        if (cancelled) return;
         const parsed = richDocumentSchema.safeParse(doc);
         if (parsed.success) setResult({ doc, pages: paginateSermon(parsed.data, measure) });
       } finally { measure.remove(); }

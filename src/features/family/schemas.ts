@@ -1,0 +1,23 @@
+import { z } from "zod";
+import { photoEditSchema as basePhotoEditSchema, hasPhotoAspect } from "@/features/files/schemas";
+import { recordRefSchema } from "@/features/sermon/schemas";
+export const personSchema = z.object({ name: z.string().trim().max(100, "100자 이내로 입력해 주세요"), answer: z.string().max(3000, "3,000자 이내로 입력해 주세요") });
+const personCompleteSchema = personSchema.extend({ name: personSchema.shape.name.min(1, "이름을 입력해 주세요") });
+export { cropFormSchema, cropDefaultValues, type CropFormData, type PhotoEdit } from "@/features/files/schemas";
+// Keep saved crops readable while new edits use the actual template's 16:9 photo slot.
+export const photoEditSchema = basePhotoEditSchema.refine(edit => hasPhotoAspect(edit, 16 / 9) || hasPhotoAspect(edit, 119 / 71), "사진 비율을 확인해 주세요");
+export const familyCompleteSchema = z.object({
+  id: z.uuid().nullable().optional(),
+  name: z.string().trim().min(1, "이름을 입력해 주세요").max(100, "100자 이내로 입력해 주세요"),
+  photo_id: z.uuid().nullable(),
+  photo: z.string().max(7500000, "5MB 이하의 사진을 올려 주세요").refine(value => value === "" || value.startsWith("https://") || /^data:image\/(png|jpeg|webp);base64,/.test(value), "사진을 다시 올려 주세요"),
+  photo_edit: photoEditSchema.nullable(),
+  leader_name: personCompleteSchema.shape.name,
+  leader_answer: personSchema.shape.answer,
+  members: z.array(personCompleteSchema).max(30, "순원은 30명까지 입력해 주세요"),
+  position: z.number().int().min(0).max(19).optional(),
+});
+export const familyFormSchema = familyCompleteSchema.extend({ name: personSchema.shape.name, leader_name: personSchema.shape.name, members: z.array(personSchema).max(30, "순원은 30명까지 입력해 주세요") });
+export const familyStoredSchema = familyFormSchema.omit({ photo: true }).extend({ id: z.uuid(), position: z.number().int().min(0).max(19) });
+export type FamilyFormData = z.infer<typeof familyFormSchema>;
+export const saveFamilySchema = z.object({ ref: recordRefSchema.nullable(), values: familyFormSchema.omit({ id: true, position: true }) });

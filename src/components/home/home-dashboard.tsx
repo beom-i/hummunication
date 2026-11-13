@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { mockBulletins } from "./mock-bulletins";
+import { loadWeeklyList } from "@/features/weekly/actions";
 import { recentBulletins } from "@/components/bulletins/local-store";
 import { bulletinHref, bulletinTitle } from "@/components/bulletins/format";
 import "./home-motion.css";
@@ -17,15 +18,21 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
   const [bulletins, setBulletins] = useState(mockBulletins);
   const [showAll, setShowAll] = useState(false);
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
+    let cancelled = false;
+    const load = async () => {
       try {
-        setBulletins(recentBulletins().map(record => {
-          const [month, week] = bulletinTitle(record.id).replace(" 주보", "").split(" ");
-          return { id: record.id, month, week, publishedAt: `${Number(record.id.slice(5, 7))}/${Number(record.id.slice(-2))}`, previewImage: "/images/home/bulletin-preview.png" };
+        const result = await loadWeeklyList();
+        if (cancelled) return;
+        if (!result.ok && result.error.code !== "UNAUTHORIZED") { toast.error(result.error.message); return; }
+        const dates = result.ok ? result.data.map(record => record.date) : recentBulletins().map(record => record.id);
+        setBulletins(dates.map(id => {
+          const [month, week] = bulletinTitle(id).replace(" 주보", "").split(" ");
+          return { id, month, week, publishedAt: `${Number(id.slice(5, 7))}/${Number(id.slice(-2))}`, previewImage: "/images/home/bulletin-preview.png" };
         }));
-      } catch { toast.error("저장된 주보를 불러오지 못했어요. 브라우저 저장 공간을 확인해 주세요"); }
-    });
-    return () => cancelAnimationFrame(frame);
+      } catch { if (!cancelled) toast.error("주보를 불러오지 못했어요. 연결을 확인해 주세요"); }
+    };
+    void load();
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -38,9 +45,9 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
           </div>
           <Card className="home-hero-motion relative mt-5 h-[268px] w-full max-w-[522px] gap-0 rounded-[30px] bg-automation p-0 shadow-none ring-0">
             <div className="pointer-events-none absolute top-[61.72px] left-[-45.27px]" aria-hidden="true">
-              <div className="origin-top-left rotate-[-23.204deg]">
+              <div className="origin-center rotate-[-23.204deg] opacity-40">
                 <div className="home-hero-light relative h-[222.812px] w-[715px]">
-                  <Image src={`${asset}hero-glow.svg`} alt="" width={914.8} height={422.612} className="absolute top-[-99.9px] left-[-99.9px] max-w-none" />
+                  <Image src="/images/templates/hero-glow.svg" alt="" width={914.8} height={422.612} className="absolute top-[-99.9px] left-[-99.9px] max-w-none" />
                 </div>
               </div>
             </div>
@@ -61,7 +68,8 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
             </div>
             <Button variant="ghost" size="sm" className="px-3 tracking-[-0.84px] hover:bg-card/10" onClick={() => setShowAll(value => !value)}>{showAll ? "접기" : "전체 보기 →"}</Button>
           </div>
-          <div className="mt-[21px] grid grid-cols-4 gap-[18px] max-lg:grid-cols-2 max-sm:grid-cols-1">
+          {!bulletins.length && <p className="mt-5 text-sm text-muted-foreground">저장된 주보가 없어요. 첫 주보를 만들어 주세요.</p>}
+          <div className="home-heading-motion mt-[21px] grid grid-cols-[repeat(4,minmax(0,252px))] gap-[18px] max-lg:grid-cols-2 max-sm:grid-cols-1">
             {bulletins.slice(0, showAll ? bulletins.length : 4).map((bulletin) => (
               <Card key={bulletin.id} data-bulletin-id={bulletin.id} className="bulletin-card relative isolate h-[164px] w-full gap-0 overflow-visible rounded-[10px] bg-transparent p-0 shadow-none ring-0">
                 <div className="bulletin-reveal absolute inset-x-0 top-0 h-[164px] overflow-hidden rounded-[10px] border border-bulletin-border">
@@ -70,16 +78,16 @@ export function HomeDashboard({ onCreate }: { onCreate: () => void }) {
                     <div className="absolute inset-0 bg-bulletin-photo-shade" />
                   </div>
                   <div className="pointer-events-none absolute top-0 -left-px w-[calc(100%+2px)]">
-                    <div className="relative flex h-[155px] items-start justify-between bg-background px-[18px] pt-[18px] pb-4">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-xs leading-[15px] tracking-[-0.36px] text-muted-foreground">{bulletin.publishedAt} 발행</p>
-                        <h3 className="text-xl leading-[25px] font-extrabold tracking-[-0.6px]">{bulletin.month}<br />{bulletin.week} 주보</h3>
+                    <div className="relative flex h-[164px] items-start justify-between bg-background px-[18px] pt-[18px] pb-4">
+                      <Image src="/images/templates/bulletin-glow.svg" alt="" width={270} height={252} className="pointer-events-none absolute top-[83px] left-1/2 max-w-none -translate-x-1/2" />
+                      <div className="relative flex flex-col gap-1">
+                        <p className="text-sm leading-[17px] tracking-[-0.42px] text-muted-foreground">{bulletin.publishedAt} 발행</p>
+                        <h3 className="text-[22px] leading-[28px] font-extrabold tracking-[-0.66px]">{bulletin.month}<br />{bulletin.week} 주보</h3>
                       </div>
                       <span className="absolute right-3 bottom-3 flex size-10 shrink-0 items-center justify-center rounded-full bg-home-brand">
-                        <Image src={`${asset}bulletin-preview-arrow.svg`} alt="" width={18} height={18} className="-rotate-90" />
+                        <Image src="/images/templates/bulletin-arrow.svg" alt="" width={20} height={20} className="-rotate-90" />
                       </span>
                     </div>
-                    <Image src={`${asset}bulletin-edge.svg`} alt="" width={196} height={25} className="h-auto w-full -scale-y-100" />
                   </div>
                   <Button asChild className="absolute inset-0 h-full w-full rounded-[10px] border-0 bg-transparent p-0 hover:bg-transparent active:translate-y-0"><Link href={bulletinHref(bulletin.id)} aria-label={`${bulletin.month} ${bulletin.week} 주보 상세 보기`} /></Button>
                 </div>

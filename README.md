@@ -32,7 +32,10 @@ pnpm dev
 
 ## 인증
 
+`/`는 `/home`으로 이동한다. `/home`, `/weekly`, `/bulletins`는 로그인 없이 사용할 수 있으며 Supabase 세션 확인을 거치지 않는다. 주보 저장은 현재 브라우저에만 보관한다. 팀·카드뉴스 메뉴는 개발 중 안내를 표시한다.
+
 공개 회원가입 없음. 계정은 admin이 Supabase 대시보드(Authentication → Users)에서 발급한다.
+기존 인증 화면과 `/protected`의 로그인 검증은 유지한다.
 
 ## 기여 규칙
 

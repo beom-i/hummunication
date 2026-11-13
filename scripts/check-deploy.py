@@ -19,6 +19,7 @@ if name == "git":
     elif args[0] == "rev-parse": print("a" * 40)
     elif args[0] == "diff" and case == "migration": print("supabase/migrations/example.sql")
     elif args[0] == "log": print("feat: example release")
+    elif args[0] == "rev-list": print("a" * 40)
 elif name == "gh":
     if args[:2] == ["pr", "list"]:
         if case == "resumed" and args[args.index("--state") + 1] == "merged": print(8)
@@ -36,13 +37,15 @@ elif name == "gh":
         print("false" if case == "ci-skipped" else "true")
     elif args[0] == "api":
         print(("failure" if case == "deploy-failed" else "success") + "\\thttps://vercel.com/example/deployment")
-elif name not in ["pnpm", "sleep"]:
+elif name == "node" and args[0] == "scripts/check-applied-migrations.mjs" and case == "migration":
+    sys.exit(1)
+elif name not in ["pnpm", "node", "sleep"]:
     sys.exit(2)
 '''
 
 with tempfile.TemporaryDirectory(prefix="hummunication-deploy-check-") as directory:
     root = Path(directory)
-    for command in ["git", "gh", "pnpm", "sleep"]:
+    for command in ["git", "gh", "pnpm", "node", "sleep"]:
         file = root / command
         file.write_text(f"#!{sys.executable}\n{stub}")
         file.chmod(0o755)

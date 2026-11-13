@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 repo="beom-i/hummunication"
-production_url="https://hummunication.vercel.app/home"
+production_url="https://hummunication.com/home"
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 trap 'printf "배포가 중단됐어요 (%s행). 오류를 확인한 후 다시 실행해 주세요.\n" "$LINENO" >&2' ERR
 
@@ -17,13 +17,20 @@ branch="$(git branch --show-current)"
 [[ -n "$branch" && "$branch" != main ]] || fail "main이 아닌 작업 브랜치에서 실행해 주세요."
 head_sha="$(git rev-parse HEAD)"
 git fetch origin main
-[[ -z "$(git diff --name-only origin/main...HEAD -- supabase/migrations/)" ]] || fail "DB 마이그레이션이 포함돼 있어요. 운영 DB 반영을 별도로 확인해 주세요."
+if [[ -n "$(git diff --name-only origin/main...HEAD -- supabase/migrations/)" ]]; then
+  printf '운영 DB 마이그레이션 이력 확인 (읽기 전용)\n'
+  pnpm exec supabase db push --remote --dry-run --skip-vault --output-format json | node scripts/check-applied-migrations.mjs
+fi
 printf '배포 대상: %s / %s / %s\n' "$repo" "$branch" "$head_sha"
 
 printf '\n[1/5] 로컬 검사\n'
 pnpm lint
 pnpm typecheck
+pnpm test:validation
+pnpm test:weekly
+pnpm test:photos
 pnpm test:content
+node tests/deploy.mjs
 pnpm build
 
 printf '\n[2/5] 브랜치 push · PR 준비\n'
@@ -33,17 +40,26 @@ if [[ -z "$pr_number" ]]; then
   pr_number="$(gh pr list --repo "$repo" --base main --head "$branch" --state merged --json number,headRefOid --jq "map(select(.headRefOid == \"$head_sha\")) | .[0].number // empty")"
 fi
 if [[ -z "$pr_number" ]]; then
-  title="$(git log --reverse --format=%s origin/main..HEAD | sed -n '1p')"
-  [[ -n "$title" ]] || fail "main에 반영할 새 커밋이 없어요."
+  title="feat: publish weekly workspace and Supabase content storage"
+  [[ -n "$(git rev-list --max-count=1 origin/main..HEAD)" ]] || fail "main에 반영할 새 커밋이 없어요."
   pr_body="$(mktemp "${TMPDIR:-/tmp}/hummunication-pr.XXXXXX")"
   trap 'rm -f "${pr_body:-}"' EXIT
   cat > "$pr_body" <<BODY
+주보를 작성하고 저장하면 설교·순별 새가족 문답·파송자 원본을 Supabase에서 다시 불러옵니다.
+
+- families와 senders 배열을 프론트·서버·DB의 같은 필드로 연결합니다.
+- 원본 이관, 소프트 삭제, 사진 참조 보호와 전체 저장 트랜잭션을 적용합니다.
+- 공개 홈 진입과 단계 전환, 브라우저 입력 복구를 함께 반영합니다.
+- 동시에 수정하면 마지막 저장 내용을 반영합니다.
+
+포함 커밋:
 $(git log --reverse --format='- %s' origin/main..HEAD)
 
-검증: pnpm lint, pnpm typecheck, pnpm test:content, pnpm build 통과.
+검증: pnpm lint, pnpm typecheck, pnpm test:validation, pnpm test:weekly, pnpm test:photos, pnpm test:content, node tests/deploy.mjs, pnpm build 통과.
 작업 브랜치: $branch
 대상 커밋: $head_sha
-DB 마이그레이션은 포함하지 않습니다.
+포함된 DB 마이그레이션은 운영 적용 이력을 읽기 전용으로 확인했습니다.
+실제 팀원 계정의 브라우저 저장·사진 업로드 성공 경로는 별도 확인이 필요합니다.
 BODY
   gh pr create --repo "$repo" --base main --head "$branch" --title "$title" --body-file "$pr_body"
   pr_number="$(gh pr view "$branch" --repo "$repo" --json number --jq .number)"

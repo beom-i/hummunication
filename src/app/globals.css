@@ -84,7 +84,7 @@
   --sidebar-border: rgb(255 255 255 / 10%);
   --brand-mark: #30322e;
   --home-brand: #6bf395;
-  --automation: #151515;
+  --automation: #101010;
   --hero-foreground: #f3f3f3;
   --hero-action: rgb(255 255 255 / 14%);
   --bulletin-border: #30302f;
@@ -138,6 +138,7 @@
 }
 
 :root {
+  --delete-overlay: rgb(0 0 0 / 40%);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -237,9 +238,13 @@
   --sermon-paper: #faf9f5;
   --sermon-red: #b92330;
   --sermon-title: #7e1d24;
-  --family-paper: #efebe5;
+  --family-paper: #efeae4;
   --family-brown: #4a2e0a;
-  --family-green: #5a8248;
+  --family-green: #5b7d41;
+  --family-names: #353535;
+  --art-black: #000;
+  --thumbnail-copy: #ebe5dd;
+  --thumbnail-red: #b4292f;
   --family-copy: #4a3a2a;
   --family-photo: #64616b;
   --family-skeleton: #dcd5ca;
@@ -299,3 +304,24 @@
 .home-scene[data-entering="true"] .home-heading-motion,
 .home-scene[data-entering="true"] .home-hero-motion,
 .home-scene[data-entering="true"] .home-hero-light { animation-play-state: paused; }
+
+.home-scene[data-view="weekly"], .weekly-popover {
+  --primary: #191f28;
+  --primary-foreground: #fff;
+  --muted-foreground: #6b7684;
+  --progress-muted: #8b95a1;
+  --progress-circle: #ebedf0;
+  --home-brand: #5ee88a;
+  --preview-stage: #f8f9fa;
+  --sender-paper: #2a1d07;
+  --sender-foreground: #efeae4;
+  --collage-glow: #515151;
+  --delete-overlay: rgb(0 0 0 / 40%);
+  --sermon-red: #af282d;
+  --sermon-title: #7e1d24;
+  --sermon-paper: #fbfaf6;
+  --sermon-body-paper: #fffefb;
+  --sermon-copy: #302d23;
+  --sermon-cover-copy: #191716;
+  --cover-paper: #e9e4da;
+}

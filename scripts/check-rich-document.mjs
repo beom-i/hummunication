@@ -16,7 +16,7 @@ for (const [width, height] of [[1200, 800], [800, 1200], [100, 100]]) {
     const crop = centeredPhotoCrop(width, height, rotation);
     const bounds = photoGeometry(width, height, rotation);
     assert.ok(crop.x >= 0 && crop.y >= 0 && crop.x + crop.width <= 1 && crop.y + crop.height <= 1);
-    assert.ok(Math.abs(crop.width * bounds.width / (crop.height * bounds.height) - 119 / 71) < 0.00001);
+    assert.ok(Math.abs(crop.width * bounds.width / (crop.height * bounds.height) - 16 / 9) < 0.00001);
   }
 }
 assert.deepEqual(photoGeometry(1200, 800, 90), { width: 800, height: 1200, transform: 'translate(800 0) rotate(90)' });
