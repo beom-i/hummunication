@@ -31,8 +31,8 @@ function FamilyFields({ index }: { index: number }) {
   return <section className="family-form flex w-full flex-col gap-4" aria-label="새가족 순 편집">
     <div className="family-form-card flex flex-col gap-6">
     <Field className="gap-3">
-      <FieldLabel htmlFor="family-name" className="text-lg font-bold">순 이름</FieldLabel>
-      <Input id="family-name" variant="filled" className="h-[41px] rounded-2xl text-lg" placeholder="순 이름을 입력해 주세요" {...register(`families.${index}.name`)} aria-invalid={!!groupErrors?.name} />
+      <FieldLabel required htmlFor="family-name" className="text-lg font-bold">순 이름</FieldLabel>
+      <Input aria-required="true" id="family-name" variant="filled" className="h-[41px] rounded-2xl text-lg" placeholder="순 이름을 입력해 주세요" {...register(`families.${index}.name`)} aria-invalid={!!groupErrors?.name} />
     </Field>
     <Field className="gap-3 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring">
       <FieldLabel htmlFor="family-photo" className="text-lg font-bold">단체 사진</FieldLabel>
@@ -45,12 +45,12 @@ function FamilyFields({ index }: { index: number }) {
     </Field>
     <Divider>순장 답변</Divider>
     <div className="rounded-2xl bg-card">
-      <div className="mb-2 flex items-center gap-2"><span className="flex h-[22px] shrink-0 items-center rounded-full bg-primary px-2 text-xs font-bold whitespace-nowrap text-home-brand">순장</span><Input variant="filled" className="answer-name h-8 bg-card px-1 font-bold" aria-label="순장 이름" placeholder="순장 이름" {...register(`families.${index}.leader_name`)} aria-invalid={!!groupErrors?.leader_name} /></div>
+      <div className="mb-2 flex items-center gap-2"><FieldLabel required htmlFor="family-leader-name" className="shrink-0 gap-1"><span className="flex h-[22px] items-center rounded-full bg-primary px-2 text-xs font-bold whitespace-nowrap text-home-brand">순장</span></FieldLabel><Input id="family-leader-name" aria-required="true" variant="filled" className="answer-name h-8 bg-card px-1 font-bold" aria-label="순장 이름" placeholder="순장 이름" {...register(`families.${index}.leader_name`)} aria-invalid={!!groupErrors?.leader_name} /></div>
       <Textarea variant="filled" className="min-h-[68px] border-0 px-[14px] py-3 text-sm leading-[1.55] md:text-sm" aria-label="순장 답변" placeholder="순장 답변을 입력해 주세요" {...register(`families.${index}.leader_answer`)} />
     </div>
     <Divider>순원 답변</Divider>
     {fields.map((field, memberIndex) => <div key={field.id} className="weekly-enter rounded-2xl bg-card">
-      <div className="mb-2 flex items-center gap-2"><span className="flex h-[22px] shrink-0 items-center rounded-full bg-primary px-2 text-xs font-bold text-home-brand">순원 {memberIndex + 1}</span><Input variant="filled" className="answer-name h-8 bg-card px-1 font-bold" aria-label={`순원 ${memberIndex + 1} 이름`} placeholder="순원 이름" {...register(`families.${index}.members.${memberIndex}.name`)} aria-invalid={!!groupErrors?.members?.[memberIndex]?.name} /><Button variant="ghost" size="xs" onClick={() => remove(memberIndex)} aria-label={`순원 ${memberIndex + 1} 삭제`} className="size-8 rounded-full bg-secondary p-0"><Image src="/images/weekly/cb1b2.svg" alt="" width={11} height={12} /></Button></div>
+      <div className="mb-2 flex items-center gap-2"><FieldLabel required htmlFor={`family-member-${memberIndex}-name`} className="shrink-0 gap-1"><span className="flex h-[22px] items-center rounded-full bg-primary px-2 text-xs font-bold text-home-brand">순원 {memberIndex + 1}</span></FieldLabel><Input id={`family-member-${memberIndex}-name`} aria-required="true" variant="filled" className="answer-name h-8 bg-card px-1 font-bold" aria-label={`순원 ${memberIndex + 1} 이름`} placeholder="순원 이름" {...register(`families.${index}.members.${memberIndex}.name`)} aria-invalid={!!groupErrors?.members?.[memberIndex]?.name} /><Button variant="ghost" size="xs" onClick={() => remove(memberIndex)} aria-label={`순원 ${memberIndex + 1} 삭제`} className="size-8 rounded-full bg-secondary p-0"><Image src="/images/weekly/cb1b2.svg" alt="" width={11} height={12} /></Button></div>
       <Textarea variant="filled" className="min-h-[68px] border-0 px-[14px] py-3 text-sm leading-[1.55] md:text-sm" aria-label={`순원 ${memberIndex + 1} 답변`} placeholder="답변을 입력해 주세요" {...register(`families.${index}.members.${memberIndex}.answer`)} />
     </div>)}
     </div>

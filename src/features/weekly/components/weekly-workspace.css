@@ -1,5 +1,5 @@
 .weekly-workspace { --progress-duration: 360ms; --progress-ease: cubic-bezier(0.22, 1, 0.36, 1); }
-.weekly-workspace:has(#weekly-form-errors) { padding-bottom: 300px; scroll-padding-bottom: 300px; }
+.weekly-workspace:has(#weekly-form-errors) { padding-bottom: 164px; scroll-padding-bottom: 164px; }
 .weekly-workspace .weekly-content { flex-shrink: 0; }
 .weekly-heading { flex-shrink: 0; }
 .weekly-sermon-layout { width: calc(100% - 176px); max-width: 1200px; transition: padding-right var(--progress-duration) var(--progress-ease); }
@@ -13,6 +13,11 @@
 .weekly-content-frame[data-loading="true"] .weekly-skeleton-layer { opacity: 1; }
 .weekly-skeleton-layer[aria-hidden="true"] [data-slot="skeleton"] { animation: none; }
 .weekly-step-indicator span { transition: background-color 280ms ease, color 280ms ease; }
+.publish-date-card { scale: 1; transition: background-color 300ms ease, border-color 300ms ease, scale 180ms cubic-bezier(.22, 1, .36, 1); }
+@media (hover: hover) { .publish-date-option:hover .publish-date-card:not([data-settled]) { scale: .985; } }
+.publish-date-option:active .publish-date-card, .publish-date-option:hover:active .publish-date-card { scale: .965; }
+.publish-date-check { opacity: 0; transform: translateY(3px) scale(.8); transition: opacity 280ms ease, transform 300ms cubic-bezier(.22, 1, .36, 1); }
+.publish-date-option:has(:checked) .publish-date-check { opacity: 1; transform: translateY(0) scale(1); }
 .progress-sidebar { position: fixed; top: 100px; right: 28px; z-index: 30; width: 260px; padding: 20px 14px; border-radius: 20px; background: var(--card); box-shadow: 0 0 2px rgb(0 0 0 / 8%); }
 .progress-toggle { position: relative; display: block; width: 100%; height: 22px; text-align: left; font-size: 16px; font-weight: 800; letter-spacing: -0.48px; cursor: pointer; border-radius: 8px; transition: height var(--progress-duration) var(--progress-ease); }
 .progress-toggle-title, .progress-toggle-current { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 180ms ease, translate var(--progress-duration) var(--progress-ease); }
@@ -127,6 +132,8 @@
   .type-ring > span:last-child { width: 20px; height: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .publish-date-card { scale: 1 !important; transition: none; }
+  .publish-date-check { transition: none; }
   .weekly-sermon-layout, .weekly-content-frame .weekly-content, .weekly-skeleton-layer, .weekly-step-indicator span, .progress-collapse, .progress-toggle, .progress-toggle-title, .progress-toggle-current, .progress-list, .progress-step, .progress-circle, .progress-substep-collapse, .progress-substeps, .progress-substep, .progress-substep-label, .progress-substep-placeholder, .type-collage-card, .type-ring, .weekly-workspace .rich-editor * { transition: none !important; }
   .weekly-workspace .weekly-page-enter, .weekly-skeleton-layer, .entry-splash { animation: none; }
   .type-collage-stage[data-introducing="true"] .type-collage-slot { animation: none; }

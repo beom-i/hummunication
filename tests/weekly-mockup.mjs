@@ -17,6 +17,9 @@ assert.equal(weeklySchema.safeParse({ ...draft, sections: [] }).success, false);
 
 const senderOnly = { ...draft, sections: ["senders"], senders: [{ name: "예시 파송자", generation: "40", group_name: "예시순", date: "2026-11-15", prayer: "공동체를 위한 기도" }] };
 assert.equal(weeklySchema.safeParse(senderOnly).success, true);
+const missingGeneration = { ...senderOnly, senders: [{ ...senderOnly.senders[0], generation: "" }] };
+assert.equal(weeklySchema.safeParse(missingGeneration).success, false, "Sender generation is required before completing the content step");
+assert.equal(weeklyDraftSchema.safeParse(missingGeneration).success, true, "Incomplete sender details must remain saveable as a draft");
 assert.equal(weeklySchema.safeParse({ ...senderOnly, senders: [] }).success, false);
 assert.equal(weeklySchema.safeParse({ ...senderOnly, senders: [{ ...senderOnly.senders[0], prayer: "" }] }).success, false);
 assert.equal(weeklyDraftSchema.safeParse({ ...draft, sermonThumbnail: "javascript:alert(1)" }).success, false);

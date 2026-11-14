@@ -24,12 +24,12 @@ function SermonFields() {
   const thumbnailEdit = watch("sermon.thumbnailEdit");
   return <div className="sermon-fields flex w-full flex-col gap-5">
     <Field data-invalid={!!errors.sermon?.date} className="gap-2">
-      <FieldLabel htmlFor="sermon-date" className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">설교 날짜</FieldLabel>
+      <FieldLabel required htmlFor="sermon-date" className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">설교 날짜</FieldLabel>
       <Controller control={control} name="sermon.date" render={({ field }) => <DatePicker id="sermon-date" name={field.name} ref={field.ref} value={field.value} onValueChange={field.onChange} onBlur={field.onBlur} aria-invalid={!!errors.sermon?.date} />} />
     </Field>
     {([{ name: "speaker", label: "설교자", placeholder: "설교자 이름을 입력해 주세요" }, { name: "title", label: "설교 제목", placeholder: "설교 제목을 입력해 주세요" }, { name: "bible", label: "성경 본문", placeholder: "예: 요한복음 3:16–18" }] as const).map(({ name, label, placeholder }) => <Field key={name} data-invalid={!!errors.sermon?.[name]} className="gap-2">
-      <FieldLabel htmlFor={`sermon-${name}`} className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">{label}</FieldLabel>
-      <Input id={`sermon-${name}`} variant="filled" placeholder={placeholder} {...register(`sermon.${name}`)} aria-invalid={!!errors.sermon?.[name]} />
+      <FieldLabel required htmlFor={`sermon-${name}`} className="text-sm font-semibold tracking-[-0.42px] text-secondary-foreground">{label}</FieldLabel>
+      <Input id={`sermon-${name}`} variant="filled" placeholder={placeholder} {...register(`sermon.${name}`)} aria-required="true" aria-invalid={!!errors.sermon?.[name]} />
     </Field>)}
     <Field className="gap-2" data-invalid={!!errors.sermonThumbnail}>
       <FieldLabel htmlFor="sermon-thumbnail" className="text-sm font-semibold text-secondary-foreground">썸네일</FieldLabel>
@@ -86,7 +86,7 @@ export function SermonEditor({ preview }: { preview: boolean }) {
     </section>
     }>
       {preview ? <Field className="gap-2" data-invalid={!!errors.sermon?.content}>
-        <FieldLabel htmlFor="sermon-content" className="text-sm leading-5 font-semibold text-secondary-foreground">정리 내용</FieldLabel>
+        <FieldLabel required htmlFor="sermon-content" className="text-sm leading-5 font-semibold text-secondary-foreground">정리 내용</FieldLabel>
         <Controller control={control} name="sermon.content" render={({ field }) => <RichTextEditor id="sermon-content" value={field.value} onChange={value => {
           field.onChange(value);
           const result = richDocumentSchema.safeParse(value);
