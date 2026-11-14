@@ -12,6 +12,7 @@ export const senderFormSchema = z.object({
 });
 export const senderCompleteSchema = senderFormSchema.extend({
   name: senderFormSchema.shape.name.min(1, "이름을 입력해 주세요"),
+  generation: senderFormSchema.shape.generation.min(1, "기수를 입력해 주세요"),
   prayer: senderFormSchema.shape.prayer.min(1, "기도제목을 입력해 주세요"),
 });
 export const senderSchema = senderFormSchema.extend({ id: z.uuid(), weekly_id: z.uuid().nullable(), position: z.number().int().min(0).max(19) });
