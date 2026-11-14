@@ -1,0 +1,55 @@
+.error-theme { --ease-out: cubic-bezier(0.16, 1, 0.3, 1); }
+
+.error-glow {
+  position: absolute;
+  inset: -20% 0 auto;
+  height: 1100px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 0%, var(--error-shine), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 70% 30%, var(--error-glow), transparent 70%);
+  animation: error-fade 2s var(--ease-out) both;
+}
+.error-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--error-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--error-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, black, transparent 75%);
+  animation: error-fade 2.4s var(--ease-out) both;
+}
+
+.error-intro > * { animation: error-rise 1.1s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+
+.error-title {
+  background: linear-gradient(to bottom right, var(--foreground) 30%, color-mix(in oklab, var(--foreground) 36%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-bottom: 0.06em;
+}
+
+.error-code {
+  font-size: clamp(110px, 19vw, 220px);
+  line-height: 0.9;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--error-shine);
+  background: linear-gradient(to bottom, var(--foreground), transparent 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: error-rise 1.1s var(--ease-out) both, error-breathe 6s 1.2s ease-in-out infinite;
+}
+
+@keyframes error-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes error-rise {
+  from { opacity: 0; transform: translateY(24px); filter: blur(12px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes error-breathe { 50% { opacity: 0.7; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .error-glow, .error-grid, .error-intro > *, .error-code { animation: none; }
+}
