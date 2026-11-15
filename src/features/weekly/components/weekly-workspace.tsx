@@ -5,10 +5,9 @@ import { CardPagesProvider } from "@/features/weekly/templates/card-pages";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { loadWeekly, saveWeekly } from "@/features/weekly/actions";
-import { prepareWeeklyPhotos, weeklyValuesForSave, refreshRecoveredPhotos } from "@/features/weekly/client";
+import { prepareWeeklyPhotos, weeklyValuesForSave } from "@/features/weekly/client";
 import { setFormErrors } from "@/lib/form-errors";
 import { invalidInput, type AppError } from "@/lib/result";
-import { legacyWeeklySchema } from "@/features/bulletins/schemas";
 import type { WeeklyRecord } from "@/features/weekly/schemas";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -19,7 +18,7 @@ import { reportServerError } from "@/features/auth/utils/report-server-error";
 import { WorkIntro } from "@/features/workspace/components/work-intro";
 import { useSidebar } from "@/components/ui/sidebar";
 import { bulletinHref } from "@/features/bulletins/utils/format";
-import { allowBulletinEdit, canEditBulletin, endBulletinEdit, findBulletin, markBulletinMigrated, loadPendingWeekly, savePendingWeekly, clearPendingWeekly, legacyDraftKey } from "@/features/bulletins/utils/local-store";
+import { allowBulletinEdit, canEditBulletin, endBulletinEdit } from "@/features/bulletins/utils/edit-session";
 import { FieldError } from "@/components/ui/field";
 import { WeeklyHeading, WeeklyFooter } from "./weekly-layout";
 import { WeeklyStepSkeleton, WeeklyLoadingScreen } from "./weekly-skeleton";
@@ -39,13 +38,11 @@ export function WeeklyWorkspace() {
   const router = useRouter();
   const { state, isMobile } = useSidebar();
   const main = useRef<HTMLElement>(null);
-  const draftTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [progressOpen, setProgressOpen] = useState(true);
   const [pending, startTransition] = useTransition();
   const editingId = search.get("bulletin");
   const [readyFor, setReadyFor] = useState<string | null | undefined>(undefined);
   const stored = useRef<WeeklyRecord | null>(null);
-  const savedRef = useRef<string | null>(null);
   const { step, view } = weeklyLocation(search);
   const { navigate, loading, loadingTarget } = useWeeklyTransition(main, editingId, pending);
   const methods = useForm<WeeklyFormData>({ resolver: zodResolver(weeklySchema), defaultValues: { ...weeklyDefaultValues, date: "", sermon: { ...weeklyDefaultValues.sermon, date: "" } }, mode: "onTouched" });
@@ -53,12 +50,7 @@ export function WeeklyWorkspace() {
   const sections = useWatch({ control: methods.control, name: "sections" });
   const families = useWatch({ control: methods.control, name: "families" });
   const senders = useWatch({ control: methods.control, name: "senders" }) ?? [];
-  const draftKey = editingId ? `${legacyDraftKey}.${editingId}` : legacyDraftKey;
   useEffect(() => {
-    if (savedRef.current === editingId && editingId) {
-      setReadyFor(editingId);
-      return;
-    }
     let cancelled = false;
     const load = async () => {
       try {
@@ -68,63 +60,24 @@ export function WeeklyWorkspace() {
           const result = await loadWeekly(editingId);
           if (cancelled) return;
           if (result.ok) {
-            const recovery = loadPendingWeekly(editingId);
             stored.current = result.data;
-            reset(recovery ? refreshRecoveredPhotos(recovery.data, result.data.data) : result.data.data);
+            reset(result.data.data);
+          } else {
+            setError("root", { type: "load", message: result.error.message });
+            reportServerError(result.error);
           }
-          else {
-            const recovery = loadPendingWeekly(editingId);
-            const local = recovery ? { data: recovery.data } : findBulletin(editingId);
-            if (recovery?.ref) stored.current = { id: editingId, data: recovery.data, ref: recovery.ref, updatedAt: new Date().toISOString() };
-            if (local && result.error.code === "NOT_FOUND") reset(local.data);
-            else { setError("root", { type: "load", message: result.error.message }); reportServerError(result.error); }
-          }
-        } else {
-          let values = initialWeeklyValues();
-          let invalidDraft = false;
-          const saved = localStorage.getItem(legacyDraftKey);
-          if (saved) {
-            let parsed: unknown;
-            try { parsed = JSON.parse(saved); } catch { parsed = null; }
-            const result = legacyWeeklySchema.safeParse(parsed);
-            if (result.success) {
-              values = initialWeeklyValues(result.data);
-            }
-            else invalidDraft = true;
-          }
-          reset(values);
-          if (invalidDraft) setError("root", { message: "이전 입력을 확인해 주세요. 원본은 브라우저에 남아 있어요" });
-        }
-        if (editingId && !stored.current && !loadPendingWeekly(editingId)) {
-          const draft = localStorage.getItem(draftKey);
-          if (draft) { const parsed = weeklyDraftSchema.safeParse(JSON.parse(draft)); if (parsed.success && parsed.data.date === editingId) reset(parsed.data); }
-        }
+        } else reset(initialWeeklyValues());
         setReadyFor(editingId);
       } catch {
         if (!cancelled) {
-          const message = "주보를 불러오지 못했어요. 연결과 브라우저 저장 공간을 확인해 주세요";
-          setError("root", { message }); toast.error(message); setReadyFor(editingId);
+          const message = "주보를 불러오지 못했어요. 연결을 확인해 주세요";
+          setError("root", { type: "load", message }); toast.error(message); setReadyFor(editingId);
         }
       }
     };
     void load();
     return () => { cancelled = true; };
-  }, [editingId, reset, setError, router, draftKey]);
-
-  useEffect(() => {
-    if (readyFor !== editingId) return;
-    const unsubscribe = methods.subscribe({ formState: { values: true }, callback: () => {
-      clearTimeout(draftTimer.current);
-      draftTimer.current = setTimeout(() => {
-        const result = weeklyDraftSchema.safeParse(getValues());
-        if (!result.success) return;
-        savePendingWeekly(result.data, stored.current?.ref ?? null);
-        try { localStorage.setItem(draftKey, JSON.stringify(result.data)); }
-        catch { setError("root", { message: "자동 저장하지 못했어요. 저장 공간을 확인해 주세요" }); }
-      }, 1000);
-    } });
-    return () => { unsubscribe(); clearTimeout(draftTimer.current); };
-  }, [methods, getValues, readyFor, editingId, draftKey, setError]);
+  }, [editingId, reset, setError, router]);
 
   const showSaveError = (error: AppError) => {
     setFormErrors(methods, error);
@@ -140,22 +93,14 @@ export function WeeklyWorkspace() {
       return;
     }
     try {
-      // Preserve legacy/local input until the complete server write succeeds.
-      savePendingWeekly(parsed.data, stored.current?.ref ?? null);
-      try { localStorage.setItem(legacyDraftKey, JSON.stringify(parsed.data)); } catch { /* Large images can exceed browser storage; server saving still works. */ }
       const photos = await prepareWeeklyPhotos(parsed.data);
       if (!photos.ok) { showSaveError(photos.error); return; }
       photos.data.families.forEach((group, index) => methods.setValue(`families.${index}.photo_id`, group.photo_id));
       methods.setValue("sermon.thumbnailId", photos.data.sermon.thumbnailId);
-      savePendingWeekly(photos.data, stored.current?.ref ?? null);
       const result = await saveWeekly({ ref: stored.current?.ref ?? null, values: weeklyValuesForSave(photos.data) });
       if (!result.ok) { showSaveError(result.error); return; }
       stored.current = result.data;
-      savedRef.current = result.data.id;
       reset(result.data.data);
-      clearTimeout(draftTimer.current);
-      try { markBulletinMigrated(result.data.id); } catch { /* The saved server record is authoritative. */ }
-      clearPendingWeekly(result.data.id);
       toast.success("저장했어요", { description: "팀에서 함께 확인할 수 있어요" });
       if (close) {
         endBulletinEdit(result.data.id);

@@ -1,3 +1,4 @@
+import { mockWeeklyRecord } from './weekly-record.browser.mjs';
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,10 +7,9 @@ import { join } from "node:path";
 export async function runPhotoFieldRegression(page, screenshotDir) {
   const origin = new URL(await page.url()).origin;
   assert.ok(['localhost', '127.0.0.1'].includes(new URL(origin).hostname), 'Run only against a local app');
-  const key = 'hummunication.weekly-draft';
-  const backup = await page.evaluate(key => localStorage.getItem(key), key);
+  let server;
   const directory = await mkdtemp(join(tmpdir(), 'hummunication-photo-'));
-  const goto = path => page.goto(origin + path, { timeout: 60000 });
+  const goto = path => server ? server.goto(path) : page.goto(origin + path, { timeout: 60000 });
   const settled = () => page.waitForFunction(() => !document.querySelector('.weekly-skeleton-layer') && document.querySelector('.weekly-content')?.inert === false);
   const capture = async name => {
     if (!screenshotDir) return;
@@ -24,7 +24,7 @@ export async function runPhotoFieldRegression(page, screenshotDir) {
       sermon: { date: '2035-01-07', speaker: '예시', title: '예시 제목', bible: '예시 본문', content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '본문 예시입니다.' }] }] } },
       families: [{ id: null, name: '예시 순', photo: '', photo_id: null, photo_edit: null, leader_name: '순장 예시', leader_answer: '답변 예시', members: [{ name: '순원 예시', answer: '함께 기도할 수 있어서 좋습니다.' }] }], senders: [],
     };
-    await page.evaluate(({ key, fixture }) => localStorage.setItem(key, JSON.stringify(fixture)), { key, fixture });
+    server = await mockWeeklyRecord(page, fixture);
     const images = await page.evaluate(() => ['#63ba8a', '#d0aa70'].map(color => {
       const canvas = document.createElement('canvas'); canvas.width = 960; canvas.height = 540;
       const context = canvas.getContext('2d'); context.fillStyle = color; context.fillRect(0, 0, 960, 540);
@@ -73,7 +73,7 @@ export async function runPhotoFieldRegression(page, screenshotDir) {
     return { familyAndSermon: true, figmaAsset: true, overlayControls: true, uploadEditReplaceCancelDelete: true };
   } finally {
     await goto('/home');
-    await page.evaluate(({ key, backup }) => { if (backup === null) localStorage.removeItem(key); else localStorage.setItem(key, backup); }, { key, backup });
+    await server?.dispose();
     await page.cdp('Emulation.clearDeviceMetricsOverride');
     await rm(directory, { recursive: true, force: true });
   }

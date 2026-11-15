@@ -1,11 +1,11 @@
+import { mockWeeklyRecord } from './weekly-record.browser.mjs';
 import assert from "node:assert/strict";
 
 export async function runFigmaUiRegression(page) {
   const origin = new URL(await page.url()).origin;
   assert.ok(['localhost', '127.0.0.1'].includes(new URL(origin).hostname), 'Run only against a local app');
-  const key = 'hummunication.weekly-draft';
-  const backup = await page.evaluate(key => localStorage.getItem(key), key);
-  const goto = path => page.goto(origin + path, { timeout: 60000 });
+  let fixture;
+  const goto = path => fixture ? fixture.goto(path) : page.goto(origin + path, { timeout: 60000 });
   const settled = () => page.waitForFunction(() => !document.querySelector('.weekly-skeleton-layer') && document.querySelector('.weekly-content')?.inert === false);
   const style = (selector, properties) => page.evaluate(({ selector, properties }) => {
     const element = document.querySelector(selector);
@@ -20,17 +20,18 @@ export async function runFigmaUiRegression(page) {
   }
   try {
     await goto('/home');
-    await page.evaluate(({ key }) => localStorage.setItem(key, JSON.stringify({
+    const values = {
       date: '2035-01-07', sections: ['thumbnail', 'cover', 'sermon', 'family', 'senders'], sermonThumbnail: '',
       sermon: { date: '2035-01-07', speaker: '설교자 예시', title: '제목 예시', bible: '본문 예시', content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '본문 예시입니다.' }] }] } },
       families: [{ id: null, name: '예시 순', photo: '', photo_id: null, photo_edit: null, leader_name: '순장 예시', leader_answer: '답변 예시', members: [{ name: '순원 예시', answer: '답변 예시' }] }],
       senders: [{ id: null, name: '파송자 예시', generation: '40', group_name: '예시 순', date: '2035-01-07', prayer: '기도제목 예시' }],
-    })), { key });
+    };
     await page.cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
     await goto('/weekly?step=1'); await settled();
-    await check('Date typography', 'label[for="2026-11-08"] > span', { fontSize: '18px', letterSpacing: '-0.36px' });
+    await check('Date typography', '.publish-date-card > span', { fontSize: '18px', letterSpacing: '-0.36px' });
     await check('Progress tracking', '.progress-step', { letterSpacing: '-0.45px' });
     await check('Substep tracking', '.progress-substep', { letterSpacing: '-0.39px' });
+    fixture = await mockWeeklyRecord(page, values);
     await goto('/weekly?step=2&view=sermon'); await settled();
     await check('Sermon input typography and radius', '#sermon-speaker', { fontWeight: '500', letterSpacing: '-0.48px', borderRadius: '12px' });
     await goto('/weekly?step=2&view=families'); await settled();
@@ -56,7 +57,7 @@ export async function runFigmaUiRegression(page) {
     return { checks, resultWidths: [1440, 820, 390] };
   } finally {
     await goto('/home');
-    await page.evaluate(({ key, backup }) => { if (backup === null) localStorage.removeItem(key); else localStorage.setItem(key, backup); }, { key, backup });
+    await fixture?.dispose();
     await page.cdp('Emulation.clearDeviceMetricsOverride');
   }
 }

@@ -18,18 +18,17 @@ export async function verifyLivePreview(page) {
   console.log(state);assert.equal(state.skeletons,0,'Typing must keep the preview visible instead of replacing it with skeletons');
 }
 
-export async function verifyRecoveredSave(page, origin) {
+export async function verifyServerSaveIdentity(page, origin) {
   const date = "2035-01-07";
   const data = {
     date, sections: ["sermon"], families: [], senders: [], sermonThumbnail: "",
-    sermon: { date, speaker: "", title: "", bible: "", content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "복구된 설교 내용" }] }] }, thumbnailId: null, thumbnailEdit: null },
+    sermon: { date, speaker: "", title: "", bible: "", content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "서버 설교 내용" }] }] }, thumbnailId: null, thumbnailEdit: null },
   };
   const ref = { id: "00000000-0000-4000-8000-000000000010", sermon: null };
   const record = { id: date, ref, data, updatedAt: "2035-01-07T00:00:00.000Z" };
   const { identifier } = await page.cdp("Page.addScriptToEvaluateOnNewDocument", { source: `
     const record = ${JSON.stringify(record)};
     sessionStorage.setItem('hummunication.weekly.edit.' + record.id, '1');
-    localStorage.setItem('hummunication.weekly.pending.' + record.id, JSON.stringify({ data: record.data, ref: null }));
     const originalFetch = window.fetch;
     window.__recoveryFetch = originalFetch;
     window.fetch = async (...args) => {
@@ -51,13 +50,13 @@ export async function verifyRecoveredSave(page, origin) {
   ` });
   try {
     await page.goto(new URL(`/weekly?bulletin=${date}&step=2&view=sermon-preview`, origin).href, { timeout: 60000, waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => document.querySelector('#sermon-content')?.textContent.includes('복구된 설교 내용') && !document.querySelector('.entry-splash'), undefined, { timeout: 60000 });
+    await page.waitForFunction(() => document.querySelector('#sermon-content')?.textContent.includes('서버 설교 내용') && !document.querySelector('.entry-splash'), undefined, { timeout: 60000 });
     await page.focus('button:text-is("저장")');
     await page.press('button:text-is("저장")', 'Enter');
     await page.waitForFunction(() => window.__submittedRef !== undefined, undefined, { timeout: 30000 });
     const submitted = await page.evaluate(() => window.__submittedRef);
-    assert.deepEqual(submitted, ref, "A browser draft without an ID must retain the loaded server identity when resaved");
-    return { recoveredServerIdentity: true };
+    assert.deepEqual(submitted, ref, "Saving a server record must retain its identity");
+    return { serverIdentity: true };
   } finally {
     await page.cdp("Page.removeScriptToEvaluateOnNewDocument", { identifier });
   }

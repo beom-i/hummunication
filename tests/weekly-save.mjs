@@ -43,3 +43,24 @@ assert.equal(saved.ok, true);
 assert.equal(calls[0].input.p_id, ref.id, "Editing an existing bulletin must update its server identity");
 assert.deepEqual(saved.data.ref, ref);
 console.log("PASS: duplicate dates have a recovery action, keep their error code, and never overwrite existing bulletins");
+
+// Incomplete content must round-trip through the server without browser storage.
+let persisted = null;
+globalThis.__weeklySaveDb.rpc = async (name, input) => {
+  if (name === "save_weekly") {
+    const sermonId = "00000000-0000-4000-8000-000000000011";
+    persisted = { id: ref.id, date: input.p_date, updated_at: "2035-01-07T00:00:00.000Z", sections: input.p_sections,
+      sermon: { ...input.p_sermon.values, id: sermonId, thumbnail_id: null, thumbnail_edit: null }, families: [], senders: [] };
+    return { data: ref.id, error: null };
+  }
+  return { data: persisted, error: null };
+};
+const incomplete = { ...values, sermon: { ...values.sermon, title: "서버에만 저장한 제목" }, families: [], senders: [] };
+const serverSaved = await saveWeekly({ ref: null, values: incomplete });
+assert.equal(serverSaved.ok, true);
+assert.equal(serverSaved.data.data.sermon.title, incomplete.sermon.title);
+const { loadWeekly } = await import("../src/features/weekly/actions.ts");
+const reloaded = await loadWeekly(values.date);
+assert.equal(reloaded.ok, true);
+assert.deepEqual(reloaded.data, serverSaved.data, "Reloading must return the saved server record and IDs");
+console.log("PASS: incomplete inputs save on the server and reload with the same record identity");

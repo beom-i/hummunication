@@ -1,3 +1,4 @@
+import { mockWeeklyRecord } from './weekly-record.browser.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const reference = JSON.parse(readFileSync(new URL('./fixtures/template-typography.json', import.meta.url), 'utf8'));
@@ -6,8 +7,6 @@ export async function runContentEditorRegression(page, screenshotDir) {
   const origin = new URL(await page.url()).origin;
   assert.ok(['localhost', '127.0.0.1'].includes(new URL(origin).hostname), 'Run only against a local app');
   const date = '2035-01-07';
-  const keys = ['hummunication.weekly-draft', `hummunication.weekly-draft.${date}`, `hummunication.weekly.pending.${date}`];
-  const backup = await page.evaluate(keys => keys.map(key => [key, localStorage.getItem(key)]), keys);
   const family = index => ({ id: null, name: `예시 ${index}순`, photo: '', photo_id: null, photo_edit: null, leader_name: `순장 ${index}`, leader_answer: '함께 기도하며 성장하는 공동체입니다.', members: [{ name: `순원 ${index}`, answer: '함께 말씀을 나누어서 감사합니다.' }] });
   const values = {
     date, sections: ['thumbnail', 'cover', 'sermon', 'family', 'senders'], sermonThumbnail: '',
@@ -15,7 +14,8 @@ export async function runContentEditorRegression(page, screenshotDir) {
     families: [family(1), family(2)],
     senders: [{ id: null, name: '파송자 예시', generation: '40', group_name: '예시 순', date, prayer: Array.from({ length: 9 }, (_, i) => `${i + 1}번째 기도제목의 내용과 마지막 문장까지 보존되어야 합니다. `.repeat(3)).join('\n') }],
   };
-  const goto = path => page.goto(origin + path, { timeout: 60000 });
+  const fixture = await mockWeeklyRecord(page, values);
+  const goto = fixture.goto;
   const settled = () => page.waitForFunction(() => document.querySelector('.weekly-content')?.inert === false && !document.querySelector('.weekly-skeleton-layer'));
   async function locationIs(view) {
     await page.waitForFunction(view => new URLSearchParams(location.search).get('view') === view, view);
@@ -23,7 +23,6 @@ export async function runContentEditorRegression(page, screenshotDir) {
   }
   try {
     await goto('/home');
-    await page.evaluate(values => localStorage.setItem('hummunication.weekly-draft', JSON.stringify(values)), values);
     await page.cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
     await goto('/weekly?step=2&view=families'); await settled(); await page.snapshot();
     assert.equal(await page.evaluate(() => document.querySelector('section[aria-label="순 목록"] article img').getBoundingClientRect().width), 164, 'Figma empty-list artwork size');
@@ -36,17 +35,18 @@ export async function runContentEditorRegression(page, screenshotDir) {
     await page.click('button[aria-label="다음 새가족 카드"]');
     await page.fill('textarea[aria-label="순장 답변"]', '입력한 답변이 오른쪽 카드에 바로 표시됩니다.');
     await page.waitForFunction(() => document.querySelector('.family-card-answers').textContent.includes('입력한 답변이 오른쪽 카드에 바로 표시됩니다.'));
-    await page.waitForFunction(() => JSON.parse(localStorage.getItem('hummunication.weekly-draft'))?.families[0].name === '변경한 예시 순');
     await goto('/weekly?step=2&view=family-card-edit&group=0'); await settled();
-    assert.equal(await page.evaluate(() => document.querySelector('#family-name').value), '변경한 예시 순', 'Refresh must preserve the edited form');
+    assert.equal(await page.evaluate(() => document.querySelector('#family-name').value), '예시 1순', 'Refresh must restore the server record, not unsaved edits');
+    await page.fill('input[name="families.0.name"]', '변경한 예시 순');
     await page.click('.weekly-footer button:text-is("완료하기")'); await locationIs('families');
     assert.equal(await page.evaluate(() => document.querySelector('[aria-label="순 목록"]').textContent.includes('변경한 예시 순')), true);
     await page.click('section[aria-label="순 목록"] > button'); await locationIs('family-card-edit');
     await page.click('.weekly-footer button:text-is("완료하기")');
-    assert.equal(await page.evaluate(() => !!document.querySelector('#family-name').closest('[data-slot="field"]').querySelector('[data-slot="field-error"]')), true, 'An empty group name must show its error');
+    assert.equal(await page.evaluate(() => !!document.querySelector('.weekly-footer [role="alert"]')), true, 'An empty group name must show its error');
     await page.fill('input[name="families.2.name"]', '추가한 예시 순');
     await page.press('input[name="families.2.name"]', 'Tab');
-    await page.waitForFunction(() => !document.querySelector('#family-name').closest('[data-slot="field"]').querySelector('[data-slot="field-error"]'), undefined, { timeout: 2000 });
+    await page.fill('input[name="families.2.leader_name"]', '추가 순장');
+    await page.fill('input[name="families.2.members.0.name"]', '추가 순원');
     await page.waitForFunction(() => document.querySelector('.family-photo-group').textContent.includes('추가한 예시 순'));
     await page.click('.weekly-footer button:text-is("완료하기")'); await locationIs('families');
     assert.equal(await page.evaluate(() => document.querySelectorAll('section[aria-label="순 목록"] > article').length), 3, 'Adding a group must open the same combined editor and retain existing groups');
@@ -94,10 +94,10 @@ export async function runContentEditorRegression(page, screenshotDir) {
         layouts.push({ width, view });
       }
     }
-    return { layouts, familyListEditorRoundTrip: true, livePreviewAndRecovery: true, senderPageNavigation: true, removedOverview: true };
+    return { layouts, familyListEditorRoundTrip: true, livePreviewAndServerReload: true, senderPageNavigation: true, removedOverview: true };
   } finally {
     await goto('/home');
-    await page.evaluate(backup => { for (const [key, value] of backup) { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } }, backup);
+    await fixture.dispose();
     await page.cdp('Emulation.clearDeviceMetricsOverride');
   }
 }
