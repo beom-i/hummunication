@@ -6,14 +6,12 @@ const html = paginateSermon({ type: "doc", content: [{ type: "paragraph", conten
 assert.equal(html.includes("style="), false, "Template output must ignore legacy color and size");
 assert.ok(html.includes("<strong>"));
 const now = new Date("2026-11-14T03:00:00Z");
-const previous = initialWeeklyValues(undefined, new Date("2026-11-07T03:00:00Z"));
-previous.sermon.title = "복구할 제목";
-const restored = initialWeeklyValues(previous, now);
-assert.equal(restored.date, "2026-11-15");
-assert.equal(restored.sermon.date, "2026-11-15");
-assert.equal(restored.sermon.title, "복구할 제목");
-previous.sermon.date = "2026-11-13";
-assert.equal(initialWeeklyValues(previous, now).sermon.date, "2026-11-13", "A separately chosen sermon date must survive draft recovery");
+const fresh = initialWeeklyValues(now);
+assert.equal(fresh.date, "2026-11-15");
+assert.equal(fresh.sermon.date, "2026-11-15");
+assert.equal(fresh.sermon.title, "");
+fresh.sermon.title = "저장하지 않은 제목";
+assert.equal(initialWeeklyValues(now).sermon.title, "", "New work must not restore unsaved content");
 assert.deepEqual(weeklyErrorMessages({}), []);
 const errors = {
   root: { type: "INVALID_INPUT", message: "입력 내용을 확인해 주세요" },

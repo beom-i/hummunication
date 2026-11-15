@@ -23,11 +23,11 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { SermonPagesProvider } from "@/features/weekly/templates/sermon-pages";
 import { WeeklyResults } from "@/features/weekly/components/weekly-results";
 import type { WeeklyFormData } from "@/features/weekly/schemas";
-import { findBulletin, allowBulletinEdit, loadSavedBulletins } from "@/features/bulletins/utils/local-store";
+import { allowBulletinEdit } from "@/features/bulletins/utils/edit-session";
 import { bulletinDateCode, bulletinTitle } from "@/features/bulletins/utils/format";
-import { editPasswordSchema, editPasswordDefaults, type EditPasswordData, type SavedBulletin } from "@/features/bulletins/schemas";
+import { editPasswordSchema, editPasswordDefaults, type EditPasswordData } from "@/features/bulletins/schemas";
 
-function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyRecord; sample: boolean }) {
+function SavedBulletinView({ record }: { record: WeeklyRecord }) {
   const router = useRouter();
   const { state, isMobile } = useSidebar();
   const methods = useForm<WeeklyFormData>({ defaultValues: record.data });
@@ -35,7 +35,6 @@ function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyR
   const [deleting, setDeleting] = useState(false);
   const [deletePending, startDelete] = useTransition();
   const remove = () => startDelete(async () => {
-    if (!("ref" in record)) return;
     methods.clearErrors("root");
     try {
       const result = await deleteWeekly(record.ref);
@@ -56,8 +55,8 @@ function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyR
       <header className="mx-auto w-full max-w-[1200px]">
         <Button asChild variant="ghost" className="mb-6 -ml-3"><Link href="/home"><ArrowLeft className="size-4" />홈으로</Link></Button>
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div><p className="mb-2 flex items-center gap-2 text-sm text-secondary-foreground"><LockKeyhole className="size-4" />보기 모드{sample && <span className="rounded-md bg-secondary px-2 py-1 text-xs">샘플 자료</span>}</p><h1 className="text-3xl font-extrabold tracking-tight max-sm:text-2xl">{bulletinTitle(record.id)}</h1><p className="mt-2 text-sm text-muted-foreground">{record.id.replaceAll("-", ". ")}. 발행{!sample && ` · ${new Date(record.updatedAt).toLocaleString("ko-KR")} 저장`}</p></div>
-          <div className="flex gap-2">{"ref" in record && <Button variant="outline" onClick={() => setDeleting(true)}><Trash2 className="size-4" />삭제</Button>}<Button onClick={() => { reset(editPasswordDefaults); setUnlocking(true); }} className="gap-2 rounded-xl px-5"><Pencil className="size-4" />수정</Button></div>
+          <div><p className="mb-2 flex items-center gap-2 text-sm text-secondary-foreground"><LockKeyhole className="size-4" />보기 모드</p><h1 className="text-3xl font-extrabold tracking-tight max-sm:text-2xl">{bulletinTitle(record.id)}</h1><p className="mt-2 text-sm text-muted-foreground">{record.id.replaceAll("-", ". ")}. 발행{` · ${new Date(record.updatedAt).toLocaleString("ko-KR")} 저장`}</p></div>
+          <div className="flex gap-2"><Button variant="outline" onClick={() => setDeleting(true)}><Trash2 className="size-4" />삭제</Button><Button onClick={() => { reset(editPasswordDefaults); setUnlocking(true); }} className="gap-2 rounded-xl px-5"><Pencil className="size-4" />수정</Button></div>
         </div>
         {record.data.sections.includes("sermon") && <dl className="mt-7 grid grid-cols-2 gap-5 rounded-2xl border bg-card p-5 max-sm:grid-cols-1">{[["설교 날짜", record.data.sermon.date], ["설교자", record.data.sermon.speaker], ["설교 제목", record.data.sermon.title], ["성경 본문", record.data.sermon.bible]].map(([label, value]) => <div key={label}><dt className="text-xs font-semibold text-muted-foreground">{label}</dt><dd className="mt-1 text-sm">{value || "입력 전"}</dd></div>)}</dl>}
       </header>
@@ -80,30 +79,29 @@ function SavedBulletinView({ record, sample }: { record: SavedBulletin | WeeklyR
 
 export function BulletinDetail() {
   const date = useSearchParams().get("date") ?? "";
-  const [loaded, setLoaded] = useState<{ record: SavedBulletin | WeeklyRecord | null; sample: boolean; error?: string } | null>(null);
+  const [loaded, setLoaded] = useState<{ date: string; record: WeeklyRecord | null; error?: string } | null>(null);
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         const result = await loadWeekly(date);
         if (cancelled) return;
-        if (result.ok) setLoaded({ record: result.data, sample: false });
-        else if (result.error.code === "NOT_FOUND") {
-          const local = findBulletin(date);
-          setLoaded({ record: local, sample: !loadSavedBulletins().some(record => record.id === date), error: local ? undefined : result.error.message });
-          if (!local) reportServerError(result.error);
-        } else { setLoaded({ record: null, sample: false, error: result.error.message }); reportServerError(result.error); }
+        if (result.ok) setLoaded({ date, record: result.data });
+        else {
+          setLoaded({ date, record: null, error: result.error.message });
+          reportServerError(result.error);
+        }
       } catch {
         if (!cancelled) {
           const message = "주보를 불러오지 못했어요. 연결을 확인해 주세요";
-          setLoaded({ record: null, sample: false, error: message }); toast.error(message);
+          setLoaded({ date, record: null, error: message }); toast.error(message);
         }
       }
     };
     void load();
     return () => { cancelled = true; };
   }, [date]);
-  if (!loaded) return <BulletinDetailSkeleton />;
+  if (!loaded || loaded.date !== date) return <BulletinDetailSkeleton />;
   if (!loaded.record) return <main className="flex min-h-svh flex-1 flex-col items-center justify-center gap-5 px-6 text-center"><h1 className="text-xl font-bold">{loaded.error ?? "주보를 찾을 수 없어요"}</h1><p className="text-sm text-muted-foreground">주보 발행일을 확인하고 다시 시도해 주세요.</p><Button onClick={() => window.location.reload()}>다시 시도</Button><Button asChild variant="outline"><Link href="/home">홈으로</Link></Button></main>;
-  return <SavedBulletinView key={`${loaded.record.id}-${loaded.record.updatedAt}`} record={loaded.record} sample={loaded.sample} />;
+  return <SavedBulletinView key={`${loaded.record.id}-${loaded.record.updatedAt}`} record={loaded.record} />;
 }

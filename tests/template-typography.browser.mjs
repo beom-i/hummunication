@@ -1,3 +1,4 @@
+import { mockWeeklyRecord } from './weekly-record.browser.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const reference = JSON.parse(readFileSync(new URL('./fixtures/template-typography.json', import.meta.url), 'utf8'));
@@ -68,22 +69,19 @@ export async function verifyTemplateTypography(page) {
 export async function runTemplateTypographyRegression(page) {
   const url = new URL(await page.url());
   assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'Only run this fixture against the local app');
-  const key = 'hummunication.weekly-draft';
-  const backup = await page.evaluate(key => localStorage.getItem(key), key);
   const values = {
     date: '2035-01-07', sections: ['thumbnail', 'cover', 'sermon', 'family', 'senders'], sermonThumbnail: '',
     sermon: { date: '2035-01-07', speaker: '설교자 예시', title: '설교 제목 예시', bible: '사사기 7:1-8', thumbnailId: null, thumbnailEdit: null, content: { type: 'doc', content: reference.sermonPages.flat().map(paragraph => ({ type: 'paragraph', content: paragraph.content })) } },
     families: [{ id: null, name: '예시 순', photo: '', photo_id: null, photo_edit: null, leader_name: '순장 예시', leader_answer: '함께 기도하는 공동체입니다.', members: [{ name: '순원 예시', answer: '함께해서 감사합니다.' }] }],
     senders: [{ id: null, name: '파송자 예시', generation: '40', group_name: '예시 순', date: '2035-01-07', prayer: reference.senderPrayers.map(prayer => prayer.text).join('\n') }],
   };
+  const fixture = await mockWeeklyRecord(page, values);
   try {
-    await page.goto(url.origin + '/home');
-    await page.evaluate(({ key, values }) => localStorage.setItem(key, JSON.stringify(values)), { key, values });
-    await page.goto(url.origin + '/weekly?step=3');
+    await fixture.goto('/weekly?step=3');
     await page.waitForSelector('section[aria-label="결과물 목록"]', { timeout: 30000 });
     return await verifyTemplateTypography(page);
   } finally {
     await page.goto(url.origin + '/home');
-    await page.evaluate(({ key, backup }) => { if (backup === null) localStorage.removeItem(key); else localStorage.setItem(key, backup); }, { key, backup });
+    await fixture.dispose();
   }
 }

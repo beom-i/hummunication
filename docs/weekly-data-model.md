@@ -69,7 +69,7 @@ content는 bold / italic / underline / strike / textStyle(HEX 색·8~32px)을 �
 
 weekly 1:N family이며 활성 (weekly_id, position)은 UNIQUE다. 사진은 SQL FK와 활성 파일 검증으로 보호한다. 새 편집은 최종 사진틀의 16:9 비율, 기존 119:71 값도 호환하며 0/90/180/270도 회전과 회전된 원본 기준 0~1 영역을 저장한다. 미연결 원본은 weekly_id=NULL로 보존한다.
 
-프론트·서버·DB 모두 families 배열의 photo_id / photo_edit / leader_name / leader_answer / members와 senders 배열의 group_name을 사용한다. photo는 화면 표시용 URL 또는 업로드 전 Data URL이며 DB에 저장하지 않는다. position은 배열 순서에서 DB가 정한다. 기존 groups·leader·photoId·photoEdit 브라우저 원본은 읽을 때 변환한다.
+프론트·서버·DB 모두 families 배열의 photo_id / photo_edit / leader_name / leader_answer / members와 senders 배열의 group_name을 사용한다. photo는 화면 표시용 URL 또는 업로드 전 Data URL이며 DB에 저장하지 않는다. position은 배열 순서에서 DB가 정한다. 브라우저 임시 저장·과거 로컬 원본 변환은 사용하지 않는다.
 
 ## sender — 파송자 한 사람
 
@@ -105,8 +105,8 @@ PNG/JPG/WebP, 최대 5MiB. 파일 형식을 서버에서 다시 검사한다. �
 - save_weekly 한 번으로 설교·문답·파송자·주보를 저장한다. 일부가 실패하면 전체 롤백한다. 파송자 입력은 전송용 배열이며 저장은 sender 일반 컬럼이다.
 - 주보 소프트 삭제 시 원본과 연결을 남긴다. 연결된 설교의 소프트 삭제는 거절한다. 순·파송자 제거는 해당 행의 deleted_at을 기록한다.
 - 활성 주보 날짜만 부분 UNIQUE이므로 삭제한 날짜로 새 주보를 만들 수 있다.
-- 공개 /home·/weekly 진입과 서버 원본의 팀원 권한은 구분한다. 날짜 6자리 편집 확인은 서버 인증이 아니다.
-- 오류는 공통 Result<T>와 fields 경로로 반환하며 RHF FieldError·root·toast로 표시한다. 저장 실패 시 입력을 유지한다.
+- /home·/weekly 진입에도 로그인이 필요하다. 날짜 6자리 편집 확인은 서버 인증이 아니다.
+- 오류는 공통 Result<T>와 fields 경로로 반환하며 RHF FieldError·root·toast로 표시한다. 저장 실패 시 현재 화면의 입력을 유지한다. 내용은 서버에만 저장하며 브라우저 자동 저장·복구·로컬 대체 조회는 사용하지 않는다.
 
 기존에 적용한 migration은 보존하고, 변경은 새 migration으로만 적용한다. 카드 장수·HTML·PNG/JPG·ZIP과 다운로드 선택은 원본에서 생성하므로 별도 DB 테이블이 필요 없다.
 

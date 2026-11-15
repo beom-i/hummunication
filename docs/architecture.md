@@ -15,7 +15,7 @@ Safy-web의 기능별 구성을 참고한다. 이 프로젝트는 단일 Next.js
 
 ## 주보
 
-`weekly/components/weekly-workspace.tsx`는 폼과 복구·서버 저장을 연결한다. 화면 선택은 `weekly-step-content.tsx`, 모션과 히스토리 전환은 `hooks/use-weekly-transition.ts`, URL·제목·진행 단계 규칙은 `utils/workflow.ts`에서 처리한다.
+`weekly/components/weekly-workspace.tsx`는 폼과 서버 조회·저장을 연결한다. 화면 선택은 `weekly-step-content.tsx`, 모션과 히스토리 전환은 `hooks/use-weekly-transition.ts`, URL·제목·진행 단계 규칙은 `utils/workflow.ts`에서 처리한다.
 
 `templates`에는 실제 출력되는 주보·설교·새가족·파송자 렌더러와 페이지 분할 결과를 제공하는 컨텍스트를 둔다. 출력 좌표·자간·폰트 스타일은 템플릿의 CSS에 모은다. 페이지 분할 계산과 PNG/JPG 내보내기는 `utils`에 둔다.
 
@@ -27,7 +27,7 @@ Safy-web의 기능별 구성을 참고한다. 이 프로젝트는 단일 Next.js
 
 `files/components`의 `PhotoField`, `PhotoCropDialog`를 설교와 새가족에서 함께 사용한다. 크롭 계산·최적화는 `files/utils`, 비동기 출력 소스는 `files/hooks`에서 처리한다. 사진 기능은 주보 UI를 가져오지 않는다.
 
-`workspace/components`에는 홈·주보·상세 화면이 공유하는 사이드바·스플래시·작업 시작 오버레이를 둔다. `home`은 대시보드, `bulletins`는 상세 보기와 브라우저 복구 데이터를 담당한다.
+`workspace/components`에는 홈·주보·상세 화면이 공유하는 사이드바·스플래시·작업 시작 오버레이를 둔다. `home`은 대시보드, `bulletins`는 서버에 저장된 주보의 상세 보기와 탭별 편집 확인을 담당한다.
 
 ## 조건부 렌더링과 검증
 
@@ -35,6 +35,12 @@ Safy-web의 기능별 구성을 참고한다. 이 프로젝트는 단일 Next.js
 
 `pnpm test:workflow`는 과거 URL 호환, 날짜별 편집 URL, 단계 제목, 선택한 유형만 열리는 규칙과 사이드바 너비를 검사한다. 기존 저장·사진·서식·분할 검증은 각 테스트 명령으로 계속 실행한다.
 
-브라우저 검증은 `scripts/check-weekly-transitions.sh <ego-space-id>`와 `tests/template-typography.browser.mjs`를 사용한다. 후자는 로컬 앱 Page를 받아 `runTemplateTypographyRegression(page)`를 실행하며, 임시 입력을 원래 값으로 복원한다. `tests/content-editors.browser.mjs`의 `runContentEditorRegression(page)`는 목록·편집 왕복, 새 순 추가, 실시간 반영·복구, 카드 페이지 이동과 PC·모바일 배치를 검사한다. 로컬 앱에서만 실행하며 테스트한 날짜의 임시 저장을 원래 값으로 복원한다. CI는 DOM 픽셀 비교를 대신하지 않는다.
+브라우저 검증은 `scripts/check-weekly-transitions.sh <ego-space-id>`와 `tests/template-typography.browser.mjs`를 사용한다. 후자는 로컬 앱 Page를 받아 `runTemplateTypographyRegression(page)`를 실행하며, 검증 후 서버 조회 모의를 해제한다. `tests/content-editors.browser.mjs`의 `runContentEditorRegression(page)`는 목록·편집 왕복, 새 순 추가, 실시간 반영·서버 재조회, 카드 페이지 이동과 PC·모바일 배치를 검사한다. 로컬 앱에서 서버 조회 응답을 모의하며 실제 DB 저장은 차단한다. CI는 DOM 픽셀 비교를 대신하지 않는다.
 
 Figma와의 픽셀 비교, 입력·미리보기 동선 검토, 구조 정리는 별개다. 코드 정리로 Figma 전체 화면의 일치가 보장되는 것은 아니다.
+
+## 저장 기준
+
+주보 내용과 사진 참조는 Supabase만 저장 원본으로 사용한다. `저장`을 누르면 미완성 입력도 서버에 저장할 수 있으며, 다음 단계로 진행할 때는 선택한 유형의 필수값을 검증한다. 브라우저 자동 저장·임시본 복구·로컬 저장본/샘플 대체 조회는 사용하지 않는다. 입력 중 값과 업로드 전 사진은 현재 폼에만 있으며 저장하지 않고 새로고침하거나 화면을 떠나면 사라진다. 저장 실패 시에는 현재 폼을 유지한다. `sessionStorage`에는 날짜 코드 편집 확인만 남기며 주보 내용은 넣지 않는다.
+
+`scripts/check-bulletin-save.sh <ego-space-id>`는 예전 브라우저 데이터가 새 작업과 서버 재조회를 덮어쓰지 않는지, 저장 요청 실패 시 화면 입력이 유지되는지 검사한다. 해당 검사는 서버 응답을 모의하고, 실제 저장 트랜잭션과 권한은 `pnpm test:backend`에서 임시 PostgreSQL로 확인한다.

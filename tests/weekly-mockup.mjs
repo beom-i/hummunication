@@ -40,33 +40,8 @@ assert.deepEqual(paginateCardRows([], measure, 70), [[]]);
 globalThis.document = originalDocument;
 console.log("Weekly validation and lossless card pagination passed.");
 
-const { clearPendingWeekly, legacyDraftKey, loadPendingWeekly, savePendingWeekly } = await import("../src/features/bulletins/utils/local-store.ts");
-const storage = new Map();
-globalThis.localStorage = {
-  getItem: key => storage.get(key) ?? null,
-  setItem: (key, value) => storage.set(key, value),
-  removeItem: key => storage.delete(key),
-};
 const saved = { ...draft, date: "2035-01-07" };
-savePendingWeekly(saved, null);
-storage.set(`${legacyDraftKey}.${saved.date}`, JSON.stringify(saved));
-storage.set(legacyDraftKey, JSON.stringify(saved));
-clearPendingWeekly(saved.date);
-assert.equal(loadPendingWeekly(saved.date), null);
-assert.equal(storage.has(`${legacyDraftKey}.${saved.date}`), false, "Successful saving must remove the dated edit draft");
-assert.equal(storage.has(legacyDraftKey), false);
-
-const other = { ...draft, date: "2035-01-14" };
-savePendingWeekly(other, null);
-storage.set(`${legacyDraftKey}.${other.date}`, JSON.stringify(other));
-storage.set(legacyDraftKey, JSON.stringify(other));
-clearPendingWeekly(saved.date);
-assert.deepEqual(loadPendingWeekly(other.date)?.data, other);
-assert.equal(storage.has(`${legacyDraftKey}.${other.date}`), true);
-assert.equal(JSON.parse(storage.get(legacyDraftKey)).date, other.date, "Saving one bulletin must preserve another bulletin's unfinished draft");
-console.log("Successful saving removes only that bulletin's recovery data.");
-
-const { weeklyValuesForSave, refreshRecoveredPhotos } = await import("../src/features/weekly/client.ts");
+const { weeklyValuesForSave } = await import("../src/features/weekly/client.ts");
 const photo = `data:image/jpeg;base64,${Buffer.alloc(5 * 1024 * 1024).toString("base64")}`;
 const photoId = "00000000-0000-4000-8000-000000000020";
 const withPhotos = { ...saved, families: saved.families.map(family => ({ ...family, photo, photo_id: photoId })), sermonThumbnail: photo, sermon: { ...saved.sermon, thumbnailId: photoId } };
@@ -77,24 +52,11 @@ assert.equal(compact.families[0].photo_id, photoId);
 assert.equal(compact.sermonThumbnail, "");
 assert.equal(compact.sermon.thumbnailId, photoId);
 assert.ok(Buffer.byteLength(JSON.stringify(compact)) < 1024 * 1024, "Uploaded image bodies must not be sent again in the save request");
-assert.equal(withPhotos.families[0].photo, photo, "Preparing the request must preserve the live preview and recovery data");
+assert.equal(withPhotos.families[0].photo, photo, "Preparing the request must preserve the live preview");
 const notUploaded = { ...withPhotos, families: withPhotos.families.map(family => ({ ...family, photo_id: null })), sermon: { ...withPhotos.sermon, thumbnailId: null } };
 assert.equal(weeklyValuesForSave(notUploaded).families[0].photo, photo);
 assert.equal(weeklyValuesForSave(notUploaded).sermonThumbnail, photo);
 console.log("Save requests keep file IDs and omit uploaded photo bodies without changing previews.");
-
-const currentPhotos = { ...withPhotos, families: [{ ...withPhotos.families[0], photo: "https://example.com/current-family" }], sermonThumbnail: "https://example.com/current-sermon" };
-const recoveredPhotos = { ...withPhotos, sermon: { ...withPhotos.sermon, title: "복구한 제목" }, families: [{ ...withPhotos.families[0], photo: "https://example.com/expired-family" }], sermonThumbnail: "https://example.com/expired-sermon" };
-const refreshed = refreshRecoveredPhotos(recoveredPhotos, currentPhotos);
-assert.equal(refreshed.families[0].photo, currentPhotos.families[0].photo);
-assert.equal(refreshed.sermonThumbnail, currentPhotos.sermonThumbnail);
-assert.equal(refreshed.sermon.title, "복구한 제목");
-assert.equal(refreshRecoveredPhotos(withPhotos, currentPhotos).families[0].photo, photo, "Unsaved local originals must survive restoring a draft");
-assert.equal(refreshRecoveredPhotos(withPhotos, currentPhotos).sermonThumbnail, photo);
-const unrelatedPhotos = { ...recoveredPhotos, families: [{ ...recoveredPhotos.families[0], photo_id: "00000000-0000-4000-8000-000000000021" }], sermon: { ...recoveredPhotos.sermon, thumbnailId: null } };
-assert.equal(refreshRecoveredPhotos(unrelatedPhotos, currentPhotos).families[0].photo, recoveredPhotos.families[0].photo);
-assert.equal(refreshRecoveredPhotos(unrelatedPhotos, currentPhotos).sermonThumbnail, recoveredPhotos.sermonThumbnail);
-console.log("Restoring a draft refreshes matching signed URLs without replacing edits or new local photos.");
 
 const { photoOutputSize, photoSizeLabel, preparePhoto } = await import("../src/features/files/utils/photo-optimization.ts");
 await assert.rejects(preparePhoto("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3C%2Fsvg%3E", 0.85), /사진 파일 형식을 확인해 주세요/, "Only raster photo bytes may reach an exported image source");
@@ -139,12 +101,3 @@ assert.ok(fittedCrop.x + fittedCrop.width <= legacyPhotoEdit.crop.x + legacyPhot
 assert.ok(fittedCrop.y + fittedCrop.height <= legacyPhotoEdit.crop.y + legacyPhotoEdit.crop.height + 0.00001);
 assert.ok(Math.abs(fittedCrop.width * legacyPhotoEdit.sourceHeight / (fittedCrop.height * legacyPhotoEdit.sourceWidth) - 16 / 9) < 0.00001);
 console.log("Legacy family crops remain readable and fit the final photo frame without losing original files.");
-
-const { recentBulletins, savedBulletinsKey, markBulletinMigrated } = await import("../src/features/bulletins/utils/local-store.ts");
-assert.deepEqual(recentBulletins().map(record => record.id), [], "An empty browser must not advertise sample bulletins as saved work");
-const localRecord = { id: saved.date, data: saved, updatedAt: "2035-01-07T00:00:00.000Z" };
-storage.set(savedBulletinsKey, JSON.stringify([localRecord]));
-assert.deepEqual(recentBulletins().map(record => record.id), [saved.date], "The anonymous fallback must retain real local records without adding mock entries");
-markBulletinMigrated(saved.date);
-assert.deepEqual(recentBulletins(), [], "Already migrated local records must not reappear");
-console.log("Recent bulletins contain actual local records only, without mock or migrated entries.");

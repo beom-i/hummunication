@@ -40,7 +40,7 @@ export async function verifyAuthentication(p, state) {
     console.log({loginRequired:true,invalidCredentialsToast:true,returnPath:true,oldErrorDismissed:true,hoverMenuAbove:true,matchingFonts:true,keyboardMenu:true,logoutFailureKeepsSession:true,logoutSuccess:true,mobileMenu:true});
     const {runContentEditorRegression}=await import('./content-editors.browser.mjs');
     const editors=await runContentEditorRegression(p);
-    assert.ok(editors.livePreviewAndRecovery);
+    assert.ok(editors.livePreviewAndServerReload);
     console.log({authenticatedEditors:true});
     await state({database:'forbidden'});await p.goto(origin+'/home',{timeout:60000});
     await p.waitForFunction(()=>document.querySelector('[data-sonner-toaster]')?.textContent.includes('접근 권한'));
@@ -48,8 +48,8 @@ export async function verifyAuthentication(p, state) {
     await state({database:'none'});await p.goto(origin+'/weekly?step=1',{timeout:60000});await p.waitForSelector('input[name="date"]');
     await p.click('.weekly-footer button:text-is("저장")');
     await p.waitForFunction(()=>location.pathname==='/auth/login'&&document.querySelector('[data-sonner-toaster]')?.textContent.includes('다시 로그인해 주세요'),undefined,{timeout:30000});
-    assert.ok(await p.evaluate(()=>!!localStorage.getItem('hummunication.weekly-draft')));
-    console.log({serverForbiddenToast:true,serverUnauthorizedRedirect:true,draftRetained:true});
+    assert.deepEqual(await p.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('hummunication.')).map(k=>[k,localStorage.getItem(k)])),backup);
+    console.log({serverForbiddenToast:true,serverUnauthorizedRedirect:true,browserStorageUnchanged:true});
     await p.goto(origin+'/weekly?step=1',{timeout:60000});await p.waitForSelector('.sidebar-profile');await p.hover('.sidebar-profile');await p.waitForSelector('[role="menuitem"]');await p.click('[role="menuitem"]');
     await p.waitForFunction(()=>location.pathname==='/auth/login');
     console.log({testSessionSignedOut:true});
